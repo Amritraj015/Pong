@@ -1,0 +1,3 @@
+// {
+//     "cmake.buildArgs": ["--build F:/Projects/Pong/build", "--target application", "-j 14"]
+// }
