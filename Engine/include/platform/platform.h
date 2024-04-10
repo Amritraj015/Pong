@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../core/StatusCode.h"
-#include "../Defines.h"
+#include "core/StatusCode.h"
+#include "core/Defines.h"
 
 namespace PongEngine
 {

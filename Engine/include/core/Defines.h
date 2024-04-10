@@ -49,10 +49,6 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 // Linux OS
 #define PLATFORM_LINUX 1
 
-// For Vulkan surface creation
-#define VK_USE_PLATFORM_XCB_KHR
-// #define VK_USE_PLATFORM_WAYLAND_KHR
-
 #include <xcb/xcb.h>
 #include <X11/keysym.h>
 #include <X11/XKBlib.h> // sudo apt-get install libx11-dev

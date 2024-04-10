@@ -1,6 +1,6 @@
 #include <iostream>
 
-int main()
+int create_application()
 {
     std::cout << "Hello World!" << std::endl;
 
