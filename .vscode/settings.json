@@ -52,6 +52,4 @@
         "xtr1common": "cpp",
         "xutility": "cpp"
     }
-} // {
-//     "cmake.buildArgs": ["--build F:/Projects/Pong/build", "--target application", "-j 14"]
-// }
+}
