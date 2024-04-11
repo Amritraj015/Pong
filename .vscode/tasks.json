@@ -5,9 +5,7 @@
             "type": "cmake",
             "label": "CMake: build",
             "command": "build",
-            "targets": [
-                "ALL_BUILD"
-            ],
+            "targets": ["ALL_BUILD"],
             "group": "build",
             "problemMatcher": [],
             "detail": "CMake build task"
@@ -15,20 +13,12 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            "command": "/usr/bin/g++",
-            "args": [
-                "-fdiagnostics-color=always",
-                "-g",
-                "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
-            ],
+            "command": "C:/MinGW/bin/g++.exe",
+            "args": ["-fdiagnostics-color=always", "-g", "${file}", "-o", "${fileDirname}/${fileBasenameNoExtension}"],
             "options": {
                 "cwd": "${fileDirname}"
             },
-            "problemMatcher": [
-                "$gcc"
-            ],
+            "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build",
                 "isDefault": true
