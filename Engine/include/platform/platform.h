@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/StatusCode.h"
-#include "core/Defines.h"
+#include "defines.h"
+#include "core/status_code.h"
 
-namespace PongEngine
+namespace Engine
 {
     class Platform
     {

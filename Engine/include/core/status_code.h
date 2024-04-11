@@ -1,6 +1,6 @@
 #pragma once
 
-namespace PongEngine
+namespace Engine
 {
     /// @brief This `enum` defines status codes to represent various operation results.
     enum class StatusCode

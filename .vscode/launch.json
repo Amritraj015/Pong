@@ -8,8 +8,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Launch",
-            "program": "${workspaceFolder}/build/application/Debug/application.exe",
+            "name": "Windows - Launch",
+            "program": "${workspaceFolder}/build/Pong/Pong.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Linux - Launch",
+            "program": "${workspaceFolder}/build/Pong/Pong",
             "args": [],
             "cwd": "${workspaceFolder}"
         }
