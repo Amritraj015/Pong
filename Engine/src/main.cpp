@@ -3,7 +3,7 @@
 
 int main()
 {
-	auto application = std::make_unique<Engine::Application>(create_application());
+    auto application = create_application();
 
     return 0;
 }
