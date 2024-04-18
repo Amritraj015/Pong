@@ -1,13 +1,7 @@
-#include <iostream>
 #include "pong_application.h"
+#include <iostream>
 
-/**
- * @brief Create a new application.
- *
- * @return Engine::Application*
- */
-Engine::Application *create_application()
-{
+Engine::Application *create_application() {
     static PongApplication application;
     std::cout << "Pong Application started successfully!" << std::endl;
 
