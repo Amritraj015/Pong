@@ -65,6 +65,7 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 
 #include <iostream>
 #include <memory>
+#include <memory.h>
 #include <utility>
 #include <algorithm>
 #include <functional>
@@ -75,3 +76,5 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 #include <array>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "core/utilities.h"

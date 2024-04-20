@@ -3,20 +3,52 @@
 #include "core/status_code.h"
 
 #if defined(_DEBUG)
-#define LOG_WARN_ENABLED = 1
-#define LOG_INFO_ENABLED = 1
-#define LOG_DEBUG_ENABLED = 1
-#define LOG_TRACE_ENABLED = 1
-#else
-#define LOG_DEBUG_ENABLED = 0
-#define LOG_TRACE_ENABLED = 0
+#define LOG_WARN_ENABLED
+#define LOG_INFO_ENABLED
+#define LOG_DEBUG_ENABLED
+#define LOG_TRACE_ENABLED
 #endif
 
 namespace Engine {
-    class Logger {
-        public:
-            Engine::StatusCode initialize();
-            void log_message();
-            Engine::StatusCode terminate();
-    };
+    StatusCode initialize_logger();
+    void log_message(LogLevel logLevel, const char *message, ...);
+    StatusCode terminate_logger();
+
+// Logs a fatal message.
+#define LFATAL(message, ...) log_message(Engine::LogLevel::FETAL, message, ##__VA_ARGS__);
+
+// Logs an error message.
+#define LERROR(message, ...) log_message(Engine::LogLevel::ERROR, message, ##__VA_ARGS__);
+
+#ifdef LOG_WARN_ENABLED
+// Logs a warning message.
+#define LWARN(message, ...) log_message(Engine::LogLevel::WARN, message, ##__VA_ARGS__);
+#else
+// Does nothing when LOG_WARN_ENABLED != 1
+#define LWARN(message, ...)
+#endif
+
+#ifdef LOG_INFO_ENABLED
+/* Logs a info message. */
+#define LINFO(message, ...) log_message(Engine::LogLevel::INFO, message, ##__VA_ARGS__);
+#else
+// Does nothing when LOG_INFO_ENABLED != 1
+#define LINFO(message, ...)
+#endif
+
+#ifdef LOG_DEBUG_ENABLED
+// Logs a debug message.
+#define LDEBUG(message, ...) log_message(Engine::LogLevel::DEBUG, message, ##__VA_ARGS__);
+#else
+// Does nothing when LOG_DEBUG_ENABLED != 1
+#define LDEBUG(message, ...)
+#endif
+
+#ifdef LOG_TRACE_ENABLED
+// Logs a debug message.
+#define LTRACE(message, ...) log_message(Engine::LogLevel::TRACE, message, ##__VA_ARGS__);
+#else
+// Does nothing when LOG_DEBUG_ENABLED != 1
+#define LTRACE(message, ...)
+#endif
 }; // namespace Engine
