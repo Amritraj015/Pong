@@ -1,33 +1,25 @@
 #include "engine.h"
-#include <wayland-client.h>
-#include "logger/logger.h"
+#include "defines.h"
+#include "application/application_manager.h"
+#include "platform/platform_factory.h"
+#include "core/status_code.h"
 
 int main() {
-    // struct wl_display *display = wl_display_connect(NULL);
-    //
-    // if (!display) {
-    //     std::cout << "Failed to connect to Wayland display.\n" <<
-    // std::endl;
-    //     return 1;
-    // }
+    // Get the current platform.
+    std::shared_ptr<Engine::Platform> platform = Engine::get_platform();
 
-    // std::cout << "Connection established successfully." << std::endl;
-    // wl_display_disconnect(display);
+    // Create the application.
+    Engine::Application *application = create_application();
 
-    Engine::initialize_logger();
+    // Terminate if the platform or application is invalid.
+    if (nullptr == platform || nullptr == application) exit(1);
 
-    LFATAL("%i This is %s level log.", 1, "FETAL")
-    LERROR("%i This is %s level log.", 2, "ERROR")
-    LWARN("%i This is %s level log.", 3, "WARN")
-    LDEBUG("%i This is %s level log.", 4, "DEBUG")
-    LINFO("%i This is %s level log.", 5, "INFO")
-    LTRACE("%i This is %s level log.", 6, "TRACE")
+    // Create the application manager.
+    auto applicationManager = std::make_unique<Engine::ApplicationManager>(platform, application);
 
-    Engine::terminate_logger();
+    // Initialize the application.
+    applicationManager->RunApplication();
 
-    LINFO("Creating Application...")
-    auto application = create_application();
-    LINFO("Application created successfully!")
-
-    return 0;
+    // Exit with a succesful status code.
+    return to_underlying(Engine::StatusCode::Successful);
 }

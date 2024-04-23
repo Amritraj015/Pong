@@ -1,3 +1,4 @@
+# BasedOnStyle: Google
 AlignTrailingComments: true
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: true
@@ -8,4 +9,5 @@ IndentAccessModifiers: true
 AccessModifierOffset: -4
 SortIncludes: false
 NamespaceIndentation: All
-ColumnLimit: 160
+ColumnLimit: 120
+Cpp11BracedListStyle: false
