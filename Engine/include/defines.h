@@ -49,12 +49,14 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 // Linux OS
 #define PLATFORM_LINUX 1
 
-#include <xcb/xcb.h>
-#include <X11/keysym.h>
-#include <X11/XKBlib.h> // sudo apt-get install libx11-dev
-#include <X11/Xlib.h>
-#include <X11/Xlib-xcb.h> // sudo apt-get install libxkbcommon-x11-dev
+// #include <X11/keysym.h>
+// #include <X11/XKBlib.h> // sudo apt-get install libx11-dev
+// #include <X11/Xlib.h>
+// #include <X11/Xlib-xcb.h> // sudo apt-get install libxkbcommon-x11-dev
+// #include <xcb/xcb.h>
 #include <sys/time.h>
+#include <wayland-client.h>
+#include <wayland-client-protocol.h>
 
 #else
 #error "Unknown platform!"
@@ -65,6 +67,7 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 
 #include <iostream>
 #include <memory>
+#include <memory.h>
 #include <utility>
 #include <algorithm>
 #include <functional>
@@ -75,3 +78,5 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 #include <array>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "core/utilities.h"

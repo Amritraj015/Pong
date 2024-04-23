@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.27)
-project(NativeGames)
-set(CMAKE_CXX_STANDARD 23)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.27)
+PROJECT(NativeGames)
+SET(CMAKE_CXX_STANDARD 23)
 
-add_subdirectory(Engine)
-add_subdirectory(Pong)
+ADD_SUBDIRECTORY(Engine)
+ADD_SUBDIRECTORY(Pong)
