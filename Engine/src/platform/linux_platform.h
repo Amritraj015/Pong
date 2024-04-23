@@ -3,7 +3,7 @@
 
 #if defined(PLATFORM_LINUX)
 
-#include "platform/platform.h"
+#include "platform.h"
 #include "xdg-shell-protocol.h"
 
 namespace Engine {

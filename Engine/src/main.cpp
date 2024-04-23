@@ -8,11 +8,14 @@ int main() {
     // Get the current platform.
     std::shared_ptr<Engine::Platform> platform = Engine::get_platform();
 
+    // Terminate if the application is running on an unsupported platform.
+    if (nullptr == platform) return to_underlying(Engine::StatusCode::UnsupportedPlatform);
+
     // Create the application.
     Engine::Application *application = create_application();
 
-    // Terminate if the platform or application is invalid.
-    if (nullptr == platform || nullptr == application) exit(1);
+    // Terminate if the application is invalid.
+    if (nullptr == application) return to_underlying(Engine::StatusCode::InvalidApplication);
 
     // Create the application manager.
     auto applicationManager = std::make_unique<Engine::ApplicationManager>(platform, application);
