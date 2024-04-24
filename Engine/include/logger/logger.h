@@ -15,14 +15,14 @@ namespace Engine {
     StatusCode terminate_logger();
 
 // Logs a fatal message.
-#define LFETAL(message, ...) log_message(Engine::LogLevel::FETAL, message, ##__VA_ARGS__);
+#define LFETAL(message, ...) log_message(Engine::LogLevel::Fatal, message, ##__VA_ARGS__);
 
 // Logs an error message.
-#define LERROR(message, ...) log_message(Engine::LogLevel::ERROR, message, ##__VA_ARGS__);
+#define LERROR(message, ...) log_message(Engine::LogLevel::Error, message, ##__VA_ARGS__);
 
 #ifdef LOG_WARN_ENABLED
 // Logs a warning message.
-#define LWARN(message, ...) log_message(Engine::LogLevel::WARN, message, ##__VA_ARGS__);
+#define LWARN(message, ...) log_message(Engine::LogLevel::Warn, message, ##__VA_ARGS__);
 #else
 // Does nothing when LOG_WARN_ENABLED != 1
 #define LWARN(message, ...)
@@ -30,7 +30,7 @@ namespace Engine {
 
 #ifdef LOG_INFO_ENABLED
 /* Logs a info message. */
-#define LINFO(message, ...) log_message(Engine::LogLevel::INFO, message, ##__VA_ARGS__);
+#define LINFO(message, ...) log_message(Engine::LogLevel::Info, message, ##__VA_ARGS__);
 #else
 // Does nothing when LOG_INFO_ENABLED != 1
 #define LINFO(message, ...)
@@ -38,7 +38,7 @@ namespace Engine {
 
 #ifdef LOG_DEBUG_ENABLED
 // Logs a debug message.
-#define LDEBUG(message, ...) log_message(Engine::LogLevel::DEBUG, message, ##__VA_ARGS__);
+#define LDEBUG(message, ...) log_message(Engine::LogLevel::Debug, message, ##__VA_ARGS__);
 #else
 // Does nothing when LOG_DEBUG_ENABLED != 1
 #define LDEBUG(message, ...)
@@ -46,7 +46,7 @@ namespace Engine {
 
 #ifdef LOG_TRACE_ENABLED
 // Logs a debug message.
-#define LTRACE(message, ...) log_message(Engine::LogLevel::TRACE, message, ##__VA_ARGS__);
+#define LTRACE(message, ...) log_message(Engine::LogLevel::Trace, message, ##__VA_ARGS__);
 #else
 // Does nothing when LOG_DEBUG_ENABLED != 1
 #define LTRACE(message, ...)

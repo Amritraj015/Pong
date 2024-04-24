@@ -1,21 +1,21 @@
 namespace Engine {
     enum struct LogLevel {
         // A variant that can be used to log fetal errors.
-        FETAL = 0,
+        Fatal = 0,
 
         // A variant that can be used to log errors.
-        ERROR = 1,
+        Error = 1,
 
         // A variant that can be used to log warnings.
-        WARN = 2,
+        Warn = 2,
 
         // A variant that can be used to log helpful information.
-        INFO = 3,
+        Info = 3,
 
         // A variant that can be used to log debug information.
-        DEBUG = 4,
+        Debug = 4,
 
         // A variant that can be used for trace logs.
-        TRACE = 5
+        Trace = 5
     };
 };
