@@ -1,3 +1,5 @@
+#pragma once
+
 namespace Engine {
     enum struct LogLevel {
         // A variant that can be used to log fetal errors.
