@@ -17,6 +17,16 @@ namespace Engine {
         LINFO("%i This is %s level log.", 5, "INFO")
         LTRACE("%i This is %s level log.", 6, "TRACE")
 
+        LINFO("***************************************************************")
+        LINFO("Application details")
+        LINFO("***************************************************************")
+        LINFO("Application name              | %s", this->mpApplication->name)
+        LINFO("Window Height requested       | %i", this->mpApplication->windowHeight)
+        LINFO("Window Width requested        | %i", this->mpApplication->windowWidth)
+        LINFO("Window Starting X position    | %i", this->mpApplication->windowStartX)
+        LINFO("Window Starting Y position    | %i", this->mpApplication->windowStartY)
+        LINFO("***************************************************************")
+
         this->TerminateSubSystems();
     }
 
