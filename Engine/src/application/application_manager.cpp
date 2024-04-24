@@ -10,7 +10,7 @@ namespace Engine {
     void ApplicationManager::RunApplication() {
         this->InitializeSubSystems();
 
-        LFETAL("%i This is %s level log.", 1, "FETAL")
+        LFATAL("%i This is %s level log.", 1, "FETAL")
         LERROR("%i This is %s level log.", 2, "ERROR")
         LWARN("%i This is %s level log.", 3, "WARN")
         LDEBUG("%i This is %s level log.", 4, "DEBUG")

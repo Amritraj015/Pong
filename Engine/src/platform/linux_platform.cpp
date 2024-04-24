@@ -19,7 +19,7 @@ namespace Engine {
 
         // If we couldn't connect to the display then return with an error status.
         if (display == NULL) {
-            LFETAL("Can't connect to display")
+            LFATAL("Can't connect to display")
             exit(1);
         }
 
@@ -34,7 +34,7 @@ namespace Engine {
         wl_display_roundtrip(display);
 
         if (compositor == NULL) {
-            LFETAL("Can't find compositor");
+            LFATAL("Can't find compositor");
             exit(1);
         }
 
@@ -43,14 +43,14 @@ namespace Engine {
         surface = wl_compositor_create_surface(compositor);
 
         if (surface == NULL) {
-            LFETAL("Can't create surface");
+            LFATAL("Can't create surface");
             exit(1);
         }
 
         LTRACE("Created surface");
 
         if (shell == NULL) {
-            LFETAL("Haven't got a Wayland shell");
+            LFATAL("Haven't got a Wayland shell");
             exit(1);
         }
 
