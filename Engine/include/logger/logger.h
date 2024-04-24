@@ -15,7 +15,7 @@ namespace Engine {
     StatusCode terminate_logger();
 
 // Logs a fatal message.
-#define LFETAL(message, ...) log_message(Engine::LogLevel::Fatal, message, ##__VA_ARGS__);
+#define LFATAL(message, ...) log_message(Engine::LogLevel::Fatal, message, ##__VA_ARGS__);
 
 // Logs an error message.
 #define LERROR(message, ...) log_message(Engine::LogLevel::Error, message, ##__VA_ARGS__);
