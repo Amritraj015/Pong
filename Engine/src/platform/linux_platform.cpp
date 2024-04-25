@@ -7,60 +7,179 @@
 #include "logger/logger.h"
 
 namespace Engine {
+
+    struct WlObjects {
+        public:
+            wl_compositor *compositor;
+            wl_shm *shared_memory;
+            wl_seat *seat;
+            xdg_wm_base *wm_base;
+            wl_seat_listener *seat_listener;
+            xdg_wm_base_listener *shell_listener;
+    };
+
+    void draw_new_frame(void *data, wl_callback *cb, uint32_t a) {
+        // wl_callback_destroy(cb);
+        //
+        // cb = wl_surface_frame(srfc);
+        // wl_callback_add_listener(cb, &cb_list, 0);
+        //
+        // draw();
+    }
+
+    void shell_ping(void *data, struct xdg_wm_base *sh, uint32_t ser) {
+        xdg_wm_base_pong(sh, ser);
+    }
+
+    void seat_capabilities(void *data, struct wl_seat *seat, uint32_t cap) {
+        // if (cap & WL_SEAT_CAPABILITY_KEYBOARD && !kb) {
+        //     kb = wl_seat_get_keyboard(seat);
+        //     wl_keyboard_add_listener(kb, &kb_list, 0);
+        // }
+    }
+
+    void seat_name(void *data, struct wl_seat *seat, const char *name) {
+    }
+
+    void on_global_object_available(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v) {
+        if (strcmp(intf, wl_compositor_interface.name) == 0) {
+            ((WlObjects *)data)->compositor = (wl_compositor *)wl_registry_bind(reg, name, &wl_compositor_interface, 4);
+        } else if (strcmp(intf, wl_shm_interface.name) == 0) {
+            ((WlObjects *)data)->shared_memory = (wl_shm *)wl_registry_bind(reg, name, &wl_shm_interface, 1);
+        } else if (strcmp(intf, xdg_wm_base_interface.name) == 0) {
+            ((WlObjects *)data)->wm_base = (xdg_wm_base *)wl_registry_bind(reg, name, &xdg_wm_base_interface, 1);
+            xdg_wm_base_add_listener(((WlObjects *)data)->wm_base, ((WlObjects *)data)->shell_listener, 0);
+        } else if (strcmp(intf, wl_seat_interface.name) == 0) {
+            ((WlObjects *)data)->seat = (wl_seat *)wl_registry_bind(reg, name, &wl_seat_interface, 1);
+            wl_seat_add_listener(((WlObjects *)data)->seat, ((WlObjects *)data)->seat_listener, 0);
+        }
+    }
+
+    void on_global_object_removal(void *data, wl_registry *reg, uint32_t name) {
+    }
+
+    void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
+        xdg_surface_ack_configure(xdg_surface, serial);
+
+        // if (!pixl) {
+        //     resz();
+        // }
+        //
+        // draw();
+    }
+
+    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat) {
+        if (!nw && !nh) {
+            return;
+        }
+
+        // if (w != nw || h != nh) {
+        //     munmap(pixl, w * h * 4);
+        //     w = nw;
+        //     h = nh;
+        //     resz();
+        // }
+    }
+
+    void close_top_level_object(void *data, struct xdg_toplevel *top) {
+        // cls = 1;
+    }
+
+    LinuxPlatform::LinuxPlatform() {
+        mRegistryListener = { .global = on_global_object_available, .global_remove = on_global_object_removal };
+        mCallbackListener = { .done = draw_new_frame };
+        mSeatListener = { .capabilities = seat_capabilities, .name = seat_name };
+        mSurfaceListener = { .configure = configure_surface };
+        mpXdgShellListener = { .ping = shell_ping };
+        mTopLevelListener = { .configure = configure_top_level_object, .close = close_top_level_object };
+        mCloseWindow = false;
+        mInitialized = false;
+    }
+
     StatusCode LinuxPlatform::CreateNewWindow(const char *windowName, i16 x, i16 y, u16 width, u16 height) {
         // Make sure the platform is not initialized already.
-        if (initialized) return StatusCode::PlatformAlreadyInitialized;
+        if (mInitialized) return StatusCode::PlatformAlreadyInitialized;
 
         // Mark the platform as initialized.
-        initialized = true;
+        mInitialized = true;
 
         // Let's try and connect to the display.
-        display = wl_display_connect(NULL);
+        mpDisplay = wl_display_connect(NULL);
 
         // If we couldn't connect to the display then return with an error status.
-        if (display == NULL) {
-            LFATAL("Can't connect to display")
-            exit(1);
-        }
+        if (NULL == mpDisplay) return StatusCode::WaylandCannotConnectToDisplay;
 
         LTRACE("Connected to display");
 
-        struct wl_registry *registry = wl_display_get_registry(display);
+        // Now, lets get the Wayland resgistry.
+        wl_registry *registry = wl_display_get_registry(mpDisplay);
 
-        // TODO: fix this.
-        // wl_registry_add_listener(registry, &registry_listener, NULL);
+        WlObjects wayland_objects{ .seat_listener = &mSeatListener, .shell_listener = &mpXdgShellListener };
 
-        wl_display_dispatch(display);
-        wl_display_roundtrip(display);
+        // Add a listeners to the registry.
+        wl_registry_add_listener(registry, &mRegistryListener, &wayland_objects);
+        wl_display_dispatch(mpDisplay);
+        wl_display_roundtrip(mpDisplay);
 
-        if (compositor == NULL) {
-            LFATAL("Can't find compositor");
-            exit(1);
-        }
+        mpCompositor = wayland_objects.compositor;
+        mpSharedMemory = wayland_objects.shared_memory;
+        mpWmBase = wayland_objects.wm_base;
+        mpSeat = wayland_objects.seat;
 
-        LTRACE("Found compositor");
+        // If we couldn't find a Wayland compositor then return with an error status.
+        if (NULL == mpCompositor) return StatusCode::WaylandCannotFindCompositor;
 
-        surface = wl_compositor_create_surface(compositor);
+        LTRACE("Wayland compositor found");
 
-        if (surface == NULL) {
-            LFATAL("Can't create surface");
-            exit(1);
-        }
+        // Now, lets create a surface.
+        mpSurface = wl_compositor_create_surface(mpCompositor);
+
+        // If surface creation failed then return with an error.
+        if (mpSurface == NULL) return StatusCode::WaylandCannotCreateSurface;
 
         LTRACE("Created surface");
 
-        if (shell == NULL) {
-            LFATAL("Haven't got a Wayland shell");
-            exit(1);
-        }
+        wl_callback *callback = wl_surface_frame(mpSurface);
+        wl_callback_add_listener(callback, &mCallbackListener, NULL);
 
-        wl_surface_destroy(surface);
-        wl_display_disconnect(display);
+        mpXdgSurface = xdg_wm_base_get_xdg_surface(mpWmBase, mpSurface);
+        xdg_surface_add_listener(mpXdgSurface, &mSurfaceListener, NULL);
+        mpXdgTopLevelObject = xdg_surface_get_toplevel(mpXdgSurface);
+        xdg_toplevel_add_listener(mpXdgTopLevelObject, &mTopLevelListener, NULL);
+        xdg_toplevel_set_title(mpXdgTopLevelObject, windowName);
+        wl_surface_commit(mpSurface);
+
+        // while (wl_display_dispatch(mpDisplay)) {
+        //     if (cls) break;
+        // }
 
         return StatusCode::Successful;
     }
 
     StatusCode LinuxPlatform::CloseWindow() {
+        wl_seat_release(mpSeat);
+
+        // Destroy XDG top level object.
+        xdg_toplevel_destroy(mpXdgTopLevelObject);
+
+        LTRACE("Destroyed XDG top level object");
+
+        // Destroy XDG surface.
+        xdg_surface_destroy(mpXdgSurface);
+
+        LTRACE("Destroyed XDG surface");
+
+        // Destroy surface.
+        wl_surface_destroy(mpSurface);
+
+        LTRACE("Destroyed surface");
+
+        // Disconnect from display.
+        wl_display_disconnect(mpDisplay);
+
+        LTRACE("Disconnected from display");
+
+        // Finally, return a successful response.
         return StatusCode::Successful;
     }
 
@@ -73,303 +192,6 @@ namespace Engine {
 } // namespace Engine
 
 #endif
-
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include <wayland-client.h>
-// #include <wayland-client-protocol.h>
-// #include <wayland-egl.h>
-// #include <fcntl.h>
-// #include <sys/mman.h>
-// #include <errno.h>
-// #include <unistd.h>
-// #include "platform/xdg-shell-protocol.h"
-//
-// struct wl_display *display = NULL;
-// struct wl_compositor *compositor = NULL;
-// struct wl_surface *surface;
-// struct wl_shell *shell;
-// struct wl_shell_surface *shell_surface;
-// struct wl_shm *shm;
-// struct wl_buffer *buffer;
-// struct wl_callback *frame_callback;
-//
-// void *shm_data;
-//
-// int WIDTH = 480;
-// int HEIGHT = 256;
-//
-// static void handle_ping(void *data, struct wl_shell_surface *shell_surface, uint32_t serial) {
-//     wl_shell_surface_pong(shell_surface, serial);
-//     fprintf(stderr, "Pinged and ponged\n");
-// }
-//
-// static void handle_configure(void *data, struct wl_shell_surface *shell_surface, uint32_t edges, int32_t width,
-//                              int32_t height) {
-// }
-//
-// static void handle_popup_done(void *data, struct wl_shell_surface *shell_surface) {
-// }
-//
-// static const struct wl_shell_surface_listener shell_surface_listener = { handle_ping, handle_configure,
-//                                                                          handle_popup_done };
-//
-// static int set_cloexec_or_close(int fd) {
-//     long flags;
-//
-//     if (fd == -1) return -1;
-//
-//     flags = fcntl(fd, F_GETFD);
-//     if (flags == -1) goto err;
-//
-//     if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) goto err;
-//
-//     return fd;
-//
-// err:
-//     close(fd);
-//     return -1;
-// }
-//
-// static int create_tmpfile_cloexec(char *tmpname) {
-//     int fd;
-//
-// #ifdef HAVE_MKOSTEMP
-//     fd = mkostemp(tmpname, O_CLOEXEC);
-//     if (fd >= 0) unlink(tmpname);
-// #else
-//     fd = mkstemp(tmpname);
-//     if (fd >= 0) {
-//         fd = set_cloexec_or_close(fd);
-//         unlink(tmpname);
-//     }
-// #endif
-//
-//     return fd;
-// }
-//
-// /*
-//  * Create a new, unique, anonymous file of the given size, and
-//  * return the file descriptor for it. The file descriptor is set
-//  * CLOEXEC. The file is immediately suitable for mmap()'ing
-//  * the given size at offset zero.
-//  *
-//  * The file should not have a permanent backing store like a disk,
-//  * but may have if XDG_RUNTIME_DIR is not properly implemented in OS.
-//  *
-//  * The file name is deleted from the file system.
-//  *
-//  * The file is suitable for buffer sharing between processes by
-//  * transmitting the file descriptor over Unix sockets using the
-//  * SCM_RIGHTS methods.
-//  */
-// int os_create_anonymous_file(off_t size) {
-//     static const char templ[] = "/weston-shared-XXXXXX";
-//     const char *path;
-//     char *name;
-//     int fd;
-//
-//     path = getenv("XDG_RUNTIME_DIR");
-//     if (!path) {
-//         errno = ENOENT;
-//         return -1;
-//     }
-//
-//     name = (char *)malloc(strlen(path) + sizeof(templ));
-//     if (!name) return -1;
-//     strcpy(name, path);
-//     strcat(name, templ);
-//
-//     fd = create_tmpfile_cloexec(name);
-//
-//     free(name);
-//
-//     if (fd < 0) return -1;
-//
-//     if (ftruncate(fd, size) < 0) {
-//         close(fd);
-//         return -1;
-//     }
-//
-//     return fd;
-// }
-//
-// uint32_t pixel_value = 0x0; // black
-//
-// static void paint_pixels() {
-//     int n;
-//     uint32_t *pixel = (uint32_t *)shm_data;
-//
-//     for (n = 0; n < WIDTH * HEIGHT; n++) {
-//         *pixel++ = pixel_value;
-//     }
-//
-//     // increase each RGB component by one
-//     pixel_value += 0x10101;
-//
-//     // if it's reached 0xffffff (white) reset to zero
-//     if (pixel_value > 0xffffff) {
-//         pixel_value = 0x0;
-//     }
-// }
-//
-// static struct wl_callback_listener frame_listener;
-//
-// int ht;
-//
-// static void redraw(void *data, struct wl_callback *callback, uint32_t time) {
-//     // fprintf(stderr, "Redrawing\n");
-//     wl_callback_destroy(frame_callback);
-//     if (ht == 0) ht = HEIGHT;
-//     wl_surface_damage(surface, 0, 0, WIDTH, ht--);
-//     paint_pixels();
-//     frame_callback = wl_surface_frame(surface);
-//     wl_surface_attach(surface, buffer, 0, 0);
-//     wl_callback_add_listener(frame_callback, &frame_listener, NULL);
-//     wl_surface_commit(surface);
-// }
-//
-// static struct wl_buffer *create_buffer() {
-//     struct wl_shm_pool *pool;
-//     int stride = WIDTH * 4; // 4 bytes per pixel
-//     int size = stride * HEIGHT;
-//     int fd;
-//     struct wl_buffer *buff;
-//
-//     ht = HEIGHT;
-//
-//     fd = os_create_anonymous_file(size);
-//     if (fd < 0) {
-//         fprintf(stderr, "creating a buffer file for %d B failed: %m\n", size);
-//         exit(1);
-//     }
-//
-//     shm_data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-//     if (shm_data == MAP_FAILED) {
-//         fprintf(stderr, "mmap failed: %m\n");
-//         close(fd);
-//         exit(1);
-//     }
-//
-//     pool = wl_shm_create_pool(shm, fd, size);
-//     buff = wl_shm_pool_create_buffer(pool, 0, WIDTH, HEIGHT, stride, WL_SHM_FORMAT_XRGB8888);
-//     // wl_buffer_add_listener(buffer, &buffer_listener, buffer);
-//     wl_shm_pool_destroy(pool);
-//     return buff;
-// }
-//
-// static void create_window() {
-//
-//     buffer = create_buffer();
-//
-//     wl_surface_attach(surface, buffer, 0, 0);
-//     // wl_surface_damage(surface, 0, 0, WIDTH, HEIGHT);
-//     wl_surface_commit(surface);
-// }
-//
-// static void shm_format(void *data, struct wl_shm *wl_shm, uint32_t format) {
-//     char *s;
-//     switch (format) {
-//     case WL_SHM_FORMAT_ARGB8888:
-//         s = "ARGB8888";
-//         break;
-//     case WL_SHM_FORMAT_XRGB8888:
-//         s = "XRGB8888";
-//         break;
-//     case WL_SHM_FORMAT_RGB565:
-//         s = "RGB565";
-//         break;
-//     default:
-//         s = "other format";
-//         break;
-//     }
-//     fprintf(stderr, "Possible shmem format %s\n", s);
-// }
-//
-// struct wl_shm_listener shm_listener = { shm_format };
-//
-// static void global_registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface,
-//                                     uint32_t version) {
-//     // if (strcmp(interface, "wl_compositor") == 0) {
-//     if (strcmp(interface, wl_compositor_interface.name) == 0) {
-//         compositor = (wl_compositor *)wl_registry_bind(registry, id, &wl_compositor_interface, 1);
-//     } else if (strcmp(interface, "wl_shell") == 0) {
-//         shell = (wl_shell *)wl_registry_bind(registry, id, &wl_shell_interface, 1);
-//     } else if (strcmp(interface, "wl_shm") == 0) {
-//         shm = (wl_shm *)wl_registry_bind(registry, id, &wl_shm_interface, 1);
-//         wl_shm_add_listener(shm, &shm_listener, NULL);
-//     }
-// }
-//
-// static void global_registry_remover(void *data, struct wl_registry *registry, uint32_t id) {
-//     printf("Got a registry losing event for %d\n", id);
-// }
-//
-// static const struct wl_registry_listener registry_listener = { global_registry_handler, global_registry_remover };
-//
-// int main(int argc, char **argv) {
-//     frame_listener = { .done = redraw };
-//
-//     display = wl_display_connect(NULL);
-//     if (display == NULL) {
-//         fprintf(stderr, "Can't connect to display\n");
-//         exit(1);
-//     }
-//     printf("connected to display\n");
-//
-//     struct wl_registry *registry = wl_display_get_registry(display);
-//     wl_registry_add_listener(registry, &registry_listener, NULL);
-//
-//     wl_display_dispatch(display);
-//     wl_display_roundtrip(display);
-//
-//     if (compositor == NULL) {
-//         fprintf(stderr, "Can't find compositor\n");
-//         exit(1);
-//     } else {
-//         fprintf(stderr, "Found compositor\n");
-//     }
-//
-//     surface = wl_compositor_create_surface(compositor);
-//     if (surface == NULL) {
-//         fprintf(stderr, "Can't create surface\n");
-//         exit(1);
-//     } else {
-//         fprintf(stderr, "Created surface\n");
-//     }
-//
-//     if (shell == NULL) {
-//         fprintf(stderr, "Haven't got a Wayland shell\n");
-//         exit(1);
-//     }
-//
-//     shell_surface = wl_shell_get_shell_surface(shell, surface);
-//     if (shell_surface == NULL) {
-//         fprintf(stderr, "Can't create shell surface\n");
-//         exit(1);
-//     } else {
-//         fprintf(stderr, "Created shell surface\n");
-//     }
-//     wl_shell_surface_set_toplevel(shell_surface);
-//
-//     wl_shell_surface_add_listener(shell_surface, &shell_surface_listener, NULL);
-//
-//     frame_callback = wl_surface_frame(surface);
-//     wl_callback_add_listener(frame_callback, &frame_listener, NULL);
-//
-//     create_window();
-//     redraw(NULL, NULL, 0);
-//
-//     while (wl_display_dispatch(display) != -1) {
-//         ;
-//     }
-//
-//     wl_display_disconnect(display);
-//     printf("disconnected from display\n");
-//
-//     exit(0);
-// }
 
 // =====================================================================================
 // #include <cstring>

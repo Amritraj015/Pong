@@ -7,13 +7,13 @@ namespace Engine {
 
         private:
             std::shared_ptr<Platform> mpPlatform;
-            Application *mpApplication;
+            Application *mpApp;
 
             StatusCode InitializeSubSystems();
             StatusCode TerminateSubSystems();
 
         public:
             explicit ApplicationManager(const std::shared_ptr<Platform> &platform, Application *application);
-            void RunApplication();
+            StatusCode RunApplication();
     };
 }; // namespace Engine

@@ -4,11 +4,14 @@
 namespace Engine {
     ApplicationManager::ApplicationManager(const std::shared_ptr<Platform> &platform, Application *application) {
         mpPlatform = platform;
-        mpApplication = application;
+        mpApp = application;
     }
 
-    void ApplicationManager::RunApplication() {
-        this->InitializeSubSystems();
+    StatusCode ApplicationManager::RunApplication() {
+        StatusCode statusCode = InitializeSubSystems();
+
+        // Return if any sub-system failed to initialize.
+        RETURN_ON_FAIL(statusCode)
 
         LFATAL("%i This is %s level log.", 1, "FETAL")
         LERROR("%i This is %s level log.", 2, "ERROR")
@@ -20,24 +23,34 @@ namespace Engine {
         LINFO("***************************************************************")
         LINFO("Application details")
         LINFO("***************************************************************")
-        LINFO("Application name              | %s", this->mpApplication->name)
-        LINFO("Window Height requested       | %i", this->mpApplication->windowHeight)
-        LINFO("Window Width requested        | %i", this->mpApplication->windowWidth)
-        LINFO("Window Starting X position    | %i", this->mpApplication->windowStartX)
-        LINFO("Window Starting Y position    | %i", this->mpApplication->windowStartY)
+        LINFO("Application name              | %s", mpApp->name)
+        LINFO("Window Height requested       | %i", mpApp->windowHeight)
+        LINFO("Window Width requested        | %i", mpApp->windowWidth)
+        LINFO("Window Starting X position    | %i", mpApp->windowStartX)
+        LINFO("Window Starting Y position    | %i", mpApp->windowStartY)
         LINFO("***************************************************************")
 
-        this->TerminateSubSystems();
+        return TerminateSubSystems();
     }
 
     StatusCode ApplicationManager::InitializeSubSystems() {
-        // Initialize logger sub-system.
-        Engine::initialize_logger();
+        // Initialize the logger sub-system.
+        StatusCode statusCode = Engine::initialize_logger();
+
+        ENSURE_SUCCESS(statusCode, "StatusCode: %i - Faild to initialize logger.", statusCode)
+
+        statusCode = mpPlatform->CreateNewWindow(mpApp->name, mpApp->windowStartX, mpApp->windowStartY,
+                                                 mpApp->windowWidth, mpApp->windowHeight);
+
+        ENSURE_SUCCESS(statusCode, "StatusCode: %i - Failed to create window.", statusCode)
 
         return StatusCode::Successful;
     }
 
     StatusCode ApplicationManager::TerminateSubSystems() {
+        // Close the application window.
+        mpPlatform->CloseWindow();
+
         // Terminate the logger sub-system.
         Engine::terminate_logger();
 
