@@ -5,12 +5,12 @@ template <typename E> constexpr typename std::underlying_type<E>::type to_underl
 }
 
 // WARNING: DO NOT PASS FUNCTIONS into this macro or else it "could" get executed multiple times.
-#define ENSURE_SUCCESS(statusCode, message, ...)                                                                       \
-    if (statusCode != StatusCode::Successful) {                                                                        \
-        VERROR(message, ##__VA_ARGS__)                                                                                 \
-        return statusCode;                                                                                             \
-    }
+#define RETURN_ON_FAIL(statusCode)                                                                                     \
+    if (StatusCode::Successful != statusCode) return statusCode;
 
 // WARNING: DO NOT PASS FUNCTIONS into this macro or else it "could" get executed multiple times.
-#define RETURN_ON_FAIL(statusCode)                                                                                     \
-    if (statusCode != StatusCode::Successful) return statusCode;
+#define ENSURE_SUCCESS(statusCode, message, ...)                                                                       \
+    if (StatusCode::Successful != statusCode) {                                                                        \
+        LFATAL(message, ##__VA_ARGS__)                                                                                 \
+        return statusCode;                                                                                             \
+    }

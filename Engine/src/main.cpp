@@ -21,8 +21,8 @@ int main() {
     auto applicationManager = std::make_unique<Engine::ApplicationManager>(platform, application);
 
     // Initialize the application.
-    applicationManager->RunApplication();
+    Engine::StatusCode statusCode = applicationManager->RunApplication();
 
     // Exit with a succesful status code.
-    return to_underlying(Engine::StatusCode::Successful);
+    return to_underlying(statusCode);
 }
