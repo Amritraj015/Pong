@@ -2,106 +2,181 @@
 
 #ifdef PLATFORM_LINUX
 
+#include <cstring>
+#include <fcntl.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <wayland-client.h>
+
 #include "linux_platform.h"
 #include "xdg-shell-protocol.h"
 #include "logger/logger.h"
 
 namespace Engine {
-
-    struct WlObjects {
-        public:
-            wl_compositor *compositor;
-            wl_shm *shared_memory;
-            wl_seat *seat;
-            xdg_wm_base *wm_base;
-            wl_seat_listener *seat_listener;
-            xdg_wm_base_listener *shell_listener;
-    };
-
-    void draw_new_frame(void *data, wl_callback *cb, uint32_t a) {
-        // wl_callback_destroy(cb);
-        //
-        // cb = wl_surface_frame(srfc);
-        // wl_callback_add_listener(cb, &cb_list, 0);
-        //
-        // draw();
+    void kb_map(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz) {
     }
 
-    void shell_ping(void *data, struct xdg_wm_base *sh, uint32_t ser) {
-        xdg_wm_base_pong(sh, ser);
+    void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc, wl_array *keys) {
     }
 
-    void seat_capabilities(void *data, struct wl_seat *seat, uint32_t cap) {
-        // if (cap & WL_SEAT_CAPABILITY_KEYBOARD && !kb) {
-        //     kb = wl_seat_get_keyboard(seat);
-        //     wl_keyboard_add_listener(kb, &kb_list, 0);
-        // }
+    void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc) {
     }
 
-    void seat_name(void *data, struct wl_seat *seat, const char *name) {
-    }
-
-    void on_global_object_available(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v) {
-        if (strcmp(intf, wl_compositor_interface.name) == 0) {
-            ((WlObjects *)data)->compositor = (wl_compositor *)wl_registry_bind(reg, name, &wl_compositor_interface, 4);
-        } else if (strcmp(intf, wl_shm_interface.name) == 0) {
-            ((WlObjects *)data)->shared_memory = (wl_shm *)wl_registry_bind(reg, name, &wl_shm_interface, 1);
-        } else if (strcmp(intf, xdg_wm_base_interface.name) == 0) {
-            ((WlObjects *)data)->wm_base = (xdg_wm_base *)wl_registry_bind(reg, name, &xdg_wm_base_interface, 1);
-            xdg_wm_base_add_listener(((WlObjects *)data)->wm_base, ((WlObjects *)data)->shell_listener, 0);
-        } else if (strcmp(intf, wl_seat_interface.name) == 0) {
-            ((WlObjects *)data)->seat = (wl_seat *)wl_registry_bind(reg, name, &wl_seat_interface, 1);
-            wl_seat_add_listener(((WlObjects *)data)->seat, ((WlObjects *)data)->seat_listener, 0);
+    void on_key_press(void *data, wl_keyboard *kb, uint32_t ser, uint32_t t, uint32_t key, uint32_t stat) {
+        if (key == 1) {
+            ((LinuxPlatform *)data)->IssueTerminateCommand();
+        } else if (key == 30) {
+            printf("a\n");
+        } else if (key == 32) {
+            printf("d\n");
         }
     }
 
-    void on_global_object_removal(void *data, wl_registry *reg, uint32_t name) {
+    void kb_mod(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp) {
     }
 
-    void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
+    void kb_rep(void *data, wl_keyboard *kb, int32_t rate, int32_t del) {
+    }
+
+    void SeatCapabilities(void *data, wl_seat *seat, uint32_t cap) {
+        if (cap & WL_SEAT_CAPABILITY_KEYBOARD && !((LinuxPlatform *)data)->mpKeyboard) {
+            ((LinuxPlatform *)data)->mpKeyboard = wl_seat_get_keyboard(seat);
+            wl_keyboard_add_listener(((LinuxPlatform *)data)->mpKeyboard, &((LinuxPlatform *)data)->mKeyboardListener, 0);
+        }
+    }
+
+    int AllocateSharedMemory(LinuxPlatform *platform, uint64_t sz) {
+        int fd = shm_open(platform->mpWindowName, O_RDWR | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
+
+        shm_unlink(platform->mpWindowName);
+        ftruncate(fd, sz);
+
+        return fd;
+    }
+
+    void Draw(LinuxPlatform *platform) {
+        memset(platform->mpPixel, 255, platform->mWindowWidth * platform->mWindowHeight * 4);
+
+        wl_surface_attach(platform->mpSurface, platform->mpBuffer, 0, 0);
+        wl_surface_damage_buffer(platform->mpSurface, 0, 0, platform->mWindowWidth, platform->mWindowHeight);
+        wl_surface_commit(platform->mpSurface);
+    }
+
+    void ResizeWindow(LinuxPlatform *platform) {
+        int size = platform->mWindowHeight * platform->mWindowWidth * 4;
+        int fd = AllocateSharedMemory(platform, size);
+
+        platform->mpPixel = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+        wl_shm_pool *pool = wl_shm_create_pool(platform->mpSharedMemory, fd, size);
+
+        platform->mpBuffer = wl_shm_pool_create_buffer(pool, 0, platform->mWindowWidth, platform->mWindowHeight, platform->mWindowWidth * 4,
+                                                       WL_SHM_FORMAT_ARGB8888);
+
+        wl_shm_pool_destroy(pool);
+
+        close(fd);
+    }
+
+    void DrawNewFrame(void *data, wl_callback *cb, uint32_t a) {
+        wl_callback_destroy(cb);
+
+        LinuxPlatform *platform = (LinuxPlatform *)data;
+
+        cb = wl_surface_frame(platform->mpSurface);
+        wl_callback_add_listener(cb, &platform->mCallbackListener, 0);
+
+        Draw(platform);
+    }
+
+    void ShellPing(void *data, xdg_wm_base *sh, uint32_t ser) {
+        xdg_wm_base_pong(sh, ser);
+    }
+
+    void SeatName(void *data, struct wl_seat *seat, const char *name) {
+    }
+
+    void OnGlobalObjectAvailable(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v) {
+        if (strcmp(intf, wl_compositor_interface.name) == 0) {
+            ((LinuxPlatform *)data)->SetCompositor((wl_compositor *)wl_registry_bind(reg, name, &wl_compositor_interface, 4));
+        } else if (strcmp(intf, wl_shm_interface.name) == 0) {
+            ((LinuxPlatform *)data)->SetSharedMemory((wl_shm *)wl_registry_bind(reg, name, &wl_shm_interface, 1));
+        } else if (strcmp(intf, xdg_wm_base_interface.name) == 0) {
+            ((LinuxPlatform *)data)->SetWmBase((xdg_wm_base *)wl_registry_bind(reg, name, &xdg_wm_base_interface, 1));
+            xdg_wm_base_add_listener(((LinuxPlatform *)data)->GetWmBase(), ((LinuxPlatform *)data)->GetWmBaseListener(), 0);
+        } else if (strcmp(intf, wl_seat_interface.name) == 0) {
+            ((LinuxPlatform *)data)->SetSeat((wl_seat *)wl_registry_bind(reg, name, &wl_seat_interface, 1));
+            wl_seat_add_listener(((LinuxPlatform *)data)->GetSeat(), ((LinuxPlatform *)data)->GetSeatListener(), 0);
+        }
+    }
+
+    void OnGlobalObjectRemoval(void *data, wl_registry *reg, uint32_t name) {
+    }
+
+    void ConfigureSurface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
         xdg_surface_ack_configure(xdg_surface, serial);
 
-        // if (!pixl) {
-        //     resz();
-        // }
-        //
-        // draw();
+        LinuxPlatform *platform = (LinuxPlatform *)data;
+
+        if (!platform->mpPixel) ResizeWindow(platform);
+
+        Draw(platform);
     }
 
-    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat) {
+    void ConfigureTopLevelObject(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat) {
         if (!nw && !nh) {
             return;
         }
 
-        // if (w != nw || h != nh) {
-        //     munmap(pixl, w * h * 4);
-        //     w = nw;
-        //     h = nh;
-        //     resz();
-        // }
+        LinuxPlatform *platform = (LinuxPlatform *)data;
+
+        if (platform->mWindowWidth != nw || platform->mWindowHeight != nh) {
+            munmap(platform->mpPixel, platform->mWindowWidth * platform->mWindowHeight * 4);
+
+            platform->mWindowWidth = nw;
+            platform->mWindowHeight = nh;
+
+            ResizeWindow(platform);
+        }
     }
 
-    void close_top_level_object(void *data, struct xdg_toplevel *top) {
-        // cls = 1;
+    void CloseTopLevelObject(void *data, struct xdg_toplevel *top) {
+        ((LinuxPlatform *)data)->IssueTerminateCommand();
     }
 
     LinuxPlatform::LinuxPlatform() {
-        mRegistryListener = { .global = on_global_object_available, .global_remove = on_global_object_removal };
-        mCallbackListener = { .done = draw_new_frame };
-        mSeatListener = { .capabilities = seat_capabilities, .name = seat_name };
-        mSurfaceListener = { .configure = configure_surface };
-        mpXdgShellListener = { .ping = shell_ping };
-        mTopLevelListener = { .configure = configure_top_level_object, .close = close_top_level_object };
         mCloseWindow = false;
         mInitialized = false;
+
+        mRegistryListener = { .global = OnGlobalObjectAvailable, .global_remove = OnGlobalObjectRemoval };
+        mCallbackListener = { .done = DrawNewFrame };
+        mSeatListener = { .capabilities = SeatCapabilities, .name = SeatName };
+        mSurfaceListener = { .configure = ConfigureSurface };
+        mpXdgShellListener = { .ping = ShellPing };
+        mTopLevelListener = { .configure = ConfigureTopLevelObject, .close = CloseTopLevelObject };
+        // mKeyboardListener = { .keymap = kb_map,
+        //                       .enter = on_keyboard_enter,
+        //                       .leave = on_keyboard_leave,
+        //                       .key = kb_key,
+        //                       .modifiers = kb_mod,
+        //                       .repeat_info = kb_rep };
     }
 
     StatusCode LinuxPlatform::CreateNewWindow(const char *windowName, i16 x, i16 y, u16 width, u16 height) {
         // Make sure the platform is not initialized already.
         if (mInitialized) return StatusCode::PlatformAlreadyInitialized;
 
-        // Mark the platform as initialized.
+        // Mark the platform as initialized and store the height,
+        // width and name of the window to be created internally.
         mInitialized = true;
+        mWindowWidth = width;
+        mWindowHeight = height;
+        mpWindowName = windowName;
 
         // Let's try and connect to the display.
         mpDisplay = wl_display_connect(NULL);
@@ -109,27 +184,20 @@ namespace Engine {
         // If we couldn't connect to the display then return with an error status.
         if (NULL == mpDisplay) return StatusCode::WaylandCannotConnectToDisplay;
 
-        LTRACE("Connected to display");
+        LTRACE("Connected to display")
 
-        // Now, lets get the Wayland resgistry.
+        // Now, lets get the Wayland registry.
         wl_registry *registry = wl_display_get_registry(mpDisplay);
 
-        WlObjects wayland_objects{ .seat_listener = &mSeatListener, .shell_listener = &mpXdgShellListener };
-
         // Add a listeners to the registry.
-        wl_registry_add_listener(registry, &mRegistryListener, &wayland_objects);
+        wl_registry_add_listener(registry, &mRegistryListener, this);
         wl_display_dispatch(mpDisplay);
         wl_display_roundtrip(mpDisplay);
-
-        mpCompositor = wayland_objects.compositor;
-        mpSharedMemory = wayland_objects.shared_memory;
-        mpWmBase = wayland_objects.wm_base;
-        mpSeat = wayland_objects.seat;
 
         // If we couldn't find a Wayland compositor then return with an error status.
         if (NULL == mpCompositor) return StatusCode::WaylandCannotFindCompositor;
 
-        LTRACE("Wayland compositor found");
+        LTRACE("Wayland compositor found")
 
         // Now, lets create a surface.
         mpSurface = wl_compositor_create_surface(mpCompositor);
@@ -137,47 +205,63 @@ namespace Engine {
         // If surface creation failed then return with an error.
         if (mpSurface == NULL) return StatusCode::WaylandCannotCreateSurface;
 
-        LTRACE("Created surface");
+        LTRACE("Created surface")
 
         wl_callback *callback = wl_surface_frame(mpSurface);
-        wl_callback_add_listener(callback, &mCallbackListener, NULL);
+        wl_callback_add_listener(callback, &mCallbackListener, this);
 
         mpXdgSurface = xdg_wm_base_get_xdg_surface(mpWmBase, mpSurface);
-        xdg_surface_add_listener(mpXdgSurface, &mSurfaceListener, NULL);
+        xdg_surface_add_listener(mpXdgSurface, &mSurfaceListener, this);
         mpXdgTopLevelObject = xdg_surface_get_toplevel(mpXdgSurface);
-        xdg_toplevel_add_listener(mpXdgTopLevelObject, &mTopLevelListener, NULL);
+        xdg_toplevel_add_listener(mpXdgTopLevelObject, &mTopLevelListener, this);
         xdg_toplevel_set_title(mpXdgTopLevelObject, windowName);
         wl_surface_commit(mpSurface);
 
-        // while (wl_display_dispatch(mpDisplay)) {
-        //     if (cls) break;
-        // }
+        while (wl_display_dispatch(mpDisplay)) {
+            if (mCloseWindow) break;
+        }
 
         return StatusCode::Successful;
     }
 
     StatusCode LinuxPlatform::CloseWindow() {
+        // Disposing keyboard structure.
+        if (mpKeyboard) {
+            wl_keyboard_destroy(mpKeyboard);
+        }
+
+        LTRACE("Destroyed keyboard structure")
+
         wl_seat_release(mpSeat);
+
+        LTRACE("Released seat resources")
+
+        // Destroy buffer.
+        if (mpBuffer) {
+            wl_buffer_destroy(mpBuffer);
+        }
+
+        LTRACE("Destroyed buffer")
 
         // Destroy XDG top level object.
         xdg_toplevel_destroy(mpXdgTopLevelObject);
 
-        LTRACE("Destroyed XDG top level object");
+        LTRACE("Destroyed XDG top level object")
 
         // Destroy XDG surface.
         xdg_surface_destroy(mpXdgSurface);
 
-        LTRACE("Destroyed XDG surface");
+        LTRACE("Destroyed XDG surface")
 
         // Destroy surface.
         wl_surface_destroy(mpSurface);
 
-        LTRACE("Destroyed surface");
+        LTRACE("Destroyed surface")
 
         // Disconnect from display.
         wl_display_disconnect(mpDisplay);
 
-        LTRACE("Disconnected from display");
+        LTRACE("Disconnected from display")
 
         // Finally, return a successful response.
         return StatusCode::Successful;
