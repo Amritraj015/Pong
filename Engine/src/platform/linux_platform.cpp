@@ -18,7 +18,7 @@
 #include "logger/logger.h"
 
 namespace Engine {
-    void kb_map(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz) {
+    void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz) {
     }
 
     void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc, wl_array *keys) {
@@ -33,25 +33,25 @@ namespace Engine {
         }
 
         if (state == 1)
-            LDEBUG("Key down: %c", static_cast<char>(key))
+            LDEBUG("Key down: %i", static_cast<char>(key))
         else
-            LDEBUG("Key up: %c", static_cast<char>(key))
+            LDEBUG("Key up: %i", static_cast<char>(key))
     }
 
-    void kb_mod(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp) {
+    void keyboard_modifiers(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp) {
     }
 
-    void kb_rep(void *data, wl_keyboard *kb, int32_t rate, int32_t del) {
+    void keyboard_repeat_info(void *data, wl_keyboard *kb, int32_t rate, int32_t del) {
     }
 
-    void SeatCapabilities(void *data, wl_seat *seat, uint32_t cap) {
+    void seat_capabilities(void *data, wl_seat *seat, uint32_t cap) {
         if (cap & WL_SEAT_CAPABILITY_KEYBOARD && !((LinuxPlatform *)data)->GetKeyboard()) {
             ((LinuxPlatform *)data)->SetKeyboard(wl_seat_get_keyboard(seat));
             wl_keyboard_add_listener(((LinuxPlatform *)data)->GetKeyboard(), ((LinuxPlatform *)data)->GetKeyboardListener(), data);
         }
     }
 
-    int AllocateSharedMemory(LinuxPlatform *platform, uint64_t sz) {
+    int allocate_shared_memory(LinuxPlatform *platform, uint64_t sz) {
         int fd = shm_open(platform->mpWindowName, O_RDWR | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
 
         shm_unlink(platform->mpWindowName);
@@ -60,17 +60,17 @@ namespace Engine {
         return fd;
     }
 
-    void Draw(LinuxPlatform *platform) {
-        memset(platform->GetPixels(), 255, platform->mWindowWidth * platform->mWindowHeight * 4);
+    void draw(LinuxPlatform *platform) {
+        memset(platform->GetPixels(), 100, platform->mWindowWidth * platform->mWindowHeight * 4);
 
         wl_surface_attach(platform->GetSurface(), platform->GetBuffer(), 0, 0);
         wl_surface_damage_buffer(platform->GetSurface(), 0, 0, platform->mWindowWidth, platform->mWindowHeight);
         wl_surface_commit(platform->GetSurface());
     }
 
-    void ResizeWindow(LinuxPlatform *platform) {
+    void resize_window(LinuxPlatform *platform) {
         int size = platform->mWindowHeight * platform->mWindowWidth * 4;
-        int fd = AllocateSharedMemory(platform, size);
+        int fd = allocate_shared_memory(platform, size);
 
         platform->SetPixels(mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
 
@@ -84,7 +84,7 @@ namespace Engine {
         close(fd);
     }
 
-    void DrawNewFrame(void *data, wl_callback *cb, uint32_t a) {
+    void draw_new_frame(void *data, wl_callback *cb, uint32_t a) {
         wl_callback_destroy(cb);
 
         LinuxPlatform *platform = (LinuxPlatform *)data;
@@ -92,17 +92,17 @@ namespace Engine {
         cb = wl_surface_frame(platform->GetSurface());
         wl_callback_add_listener(cb, platform->GetCallbackListener(), platform);
 
-        Draw(platform);
+        draw(platform);
     }
 
-    void ShellPing(void *data, xdg_wm_base *sh, uint32_t ser) {
+    void shell_ping(void *data, xdg_wm_base *sh, uint32_t ser) {
         xdg_wm_base_pong(sh, ser);
     }
 
-    void SeatName(void *data, struct wl_seat *seat, const char *name) {
+    void seat_name(void *data, struct wl_seat *seat, const char *name) {
     }
 
-    void OnGlobalObjectAvailable(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v) {
+    void on_global_object_available(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v) {
         if (strcmp(intf, wl_compositor_interface.name) == 0) {
             ((LinuxPlatform *)data)->SetCompositor((wl_compositor *)wl_registry_bind(reg, name, &wl_compositor_interface, 4));
         } else if (strcmp(intf, wl_shm_interface.name) == 0) {
@@ -116,20 +116,20 @@ namespace Engine {
         }
     }
 
-    void OnGlobalObjectRemoval(void *data, wl_registry *reg, uint32_t name) {
+    void on_global_object_removal(void *data, wl_registry *reg, uint32_t name) {
     }
 
-    void ConfigureSurface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
+    void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
         xdg_surface_ack_configure(xdg_surface, serial);
 
         LinuxPlatform *platform = (LinuxPlatform *)data;
 
-        if (!platform->GetPixels()) ResizeWindow(platform);
+        if (!platform->GetPixels()) resize_window(platform);
 
-        Draw(platform);
+        draw(platform);
     }
 
-    void ConfigureTopLevelObject(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat) {
+    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat) {
         if (!nw && !nh) {
             return;
         }
@@ -142,11 +142,11 @@ namespace Engine {
             platform->mWindowWidth = nw;
             platform->mWindowHeight = nh;
 
-            ResizeWindow(platform);
+            resize_window(platform);
         }
     }
 
-    void CloseTopLevelObject(void *data, struct xdg_toplevel *top) {
+    void close_top_level_object(void *data, struct xdg_toplevel *top) {
         ((LinuxPlatform *)data)->IssueTerminateCommand();
     }
 
@@ -154,18 +154,18 @@ namespace Engine {
         mCloseWindow = false;
         mInitialized = false;
 
-        mRegistryListener = { .global = OnGlobalObjectAvailable, .global_remove = OnGlobalObjectRemoval };
-        mCallbackListener = { .done = DrawNewFrame };
-        mSeatListener = { .capabilities = SeatCapabilities, .name = SeatName };
-        mSurfaceListener = { .configure = ConfigureSurface };
-        mpXdgShellListener = { .ping = ShellPing };
-        mTopLevelListener = { .configure = ConfigureTopLevelObject, .close = CloseTopLevelObject };
-        mKeyboardListener = { .keymap = kb_map,
+        mRegistryListener = { .global = on_global_object_available, .global_remove = on_global_object_removal };
+        mCallbackListener = { .done = draw_new_frame };
+        mSeatListener = { .capabilities = seat_capabilities, .name = seat_name };
+        mSurfaceListener = { .configure = configure_surface };
+        mpXdgShellListener = { .ping = shell_ping };
+        mTopLevelListener = { .configure = configure_top_level_object, .close = close_top_level_object };
+        mKeyboardListener = { .keymap = keyboard_mapping,
                               .enter = on_keyboard_enter,
                               .leave = on_keyboard_leave,
                               .key = on_key_press,
-                              .modifiers = kb_mod,
-                              .repeat_info = kb_rep };
+                              .modifiers = keyboard_modifiers,
+                              .repeat_info = keyboard_repeat_info };
     }
 
     StatusCode LinuxPlatform::CreateNewWindow(const char *windowName, i16 x, i16 y, u16 width, u16 height) {
@@ -227,9 +227,7 @@ namespace Engine {
 
     StatusCode LinuxPlatform::CloseWindow() {
         // Disposing keyboard structure.
-        if (mpKeyboard) {
-            wl_keyboard_destroy(mpKeyboard);
-        }
+        if (mpKeyboard) wl_keyboard_destroy(mpKeyboard);
 
         LTRACE("Destroyed keyboard structure")
 
@@ -238,9 +236,7 @@ namespace Engine {
         LTRACE("Released seat resources")
 
         // Destroy buffer.
-        if (mpBuffer) {
-            wl_buffer_destroy(mpBuffer);
-        }
+        if (mpBuffer) wl_buffer_destroy(mpBuffer);
 
         LTRACE("Destroyed buffer")
 
@@ -263,6 +259,9 @@ namespace Engine {
         wl_display_disconnect(mpDisplay);
 
         LTRACE("Disconnected from display")
+
+        // Set the initialized flag as false.
+        mInitialized = false;
 
         // Finally, return a successful response.
         return StatusCode::Successful;
