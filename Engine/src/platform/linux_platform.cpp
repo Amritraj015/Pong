@@ -61,7 +61,7 @@ namespace Engine {
     }
 
     void draw(LinuxPlatform *platform) {
-        memset(platform->GetPixels(), 100, platform->mWindowWidth * platform->mWindowHeight * 4);
+        memset(platform->GetPixels(), 255, platform->mWindowWidth * platform->mWindowHeight * 4);
 
         wl_surface_attach(platform->GetSurface(), platform->GetBuffer(), 0, 0);
         wl_surface_damage_buffer(platform->GetSurface(), 0, 0, platform->mWindowWidth, platform->mWindowHeight);
