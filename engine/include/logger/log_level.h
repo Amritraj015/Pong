@@ -1,7 +1,7 @@
 #pragma once
 
 namespace Engine {
-    enum struct LogLevel {
+    enum class LogLevel {
         Fatal = 0, // A variant that can be used to log fatal errors.
         Error = 1, // A variant that can be used to log errors.
         Warn = 2,  // A variant that can be used to log warnings.

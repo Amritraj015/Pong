@@ -13,12 +13,14 @@ namespace Engine {
         // Return if any sub-system failed to initialize.
         RETURN_ON_FAIL(statusCode)
 
-        LFATAL("%i This is %s level log.", 1, "FETAL")
-        LERROR("%i This is %s level log.", 2, "ERROR")
-        LWARN("%i This is %s level log.", 3, "WARN")
-        LDEBUG("%i This is %s level log.", 4, "DEBUG")
-        LINFO("%i This is %s level log.", 5, "INFO")
-        LTRACE("%i This is %s level log.", 6, "TRACE")
+        return TerminateSubSystems();
+    }
+
+    StatusCode ApplicationManager::InitializeSubSystems() {
+        // Initialize the logger sub-system.
+        StatusCode statusCode = Engine::initialize_logger();
+
+        ENSURE_SUCCESS(statusCode, "StatusCode: %i - Faild to initialize logger.", statusCode)
 
         LINFO("***************************************************************")
         LINFO("Application details")
@@ -30,17 +32,8 @@ namespace Engine {
         LINFO("Window Starting Y position    | %i", mpApp->windowStartY)
         LINFO("***************************************************************")
 
-        return TerminateSubSystems();
-    }
-
-    StatusCode ApplicationManager::InitializeSubSystems() {
-        // Initialize the logger sub-system.
-        StatusCode statusCode = Engine::initialize_logger();
-
-        ENSURE_SUCCESS(statusCode, "StatusCode: %i - Faild to initialize logger.", statusCode)
-
-        statusCode = mpPlatform->CreateNewWindow(mpApp->name, mpApp->windowStartX, mpApp->windowStartY,
-                                                 mpApp->windowWidth, mpApp->windowHeight);
+        statusCode =
+            mpPlatform->CreateNewWindow(mpApp->name, mpApp->windowStartX, mpApp->windowStartY, mpApp->windowWidth, mpApp->windowHeight);
 
         ENSURE_SUCCESS(statusCode, "StatusCode: %i - Failed to create window.", statusCode)
 
