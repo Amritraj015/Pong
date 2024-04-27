@@ -1,6 +1,6 @@
 #include "defines.h"
-#include "linux_platform.h"
-#include "windows_platform.h"
+#include "platform/linux/wayland_platform.h"
+#include "platform/windows/windows_platform.h"
 #include "platform_factory.h"
 
 namespace Engine {
@@ -8,8 +8,8 @@ namespace Engine {
 
 #if defined(PLATFORM_LINUX)
 
-        // If the current platform is Linux then return an instance of LinuxPlatform.
-        return std::make_shared<Engine::LinuxPlatform>();
+        // If the current platform is Linux then return an instance of WaylandPlatform .
+        return std::make_shared<Engine::WaylandPlatform>();
 
 #elif defined(PLATFORM_WINDOWS)
 

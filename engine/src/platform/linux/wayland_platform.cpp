@@ -14,7 +14,7 @@
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-#include "linux_platform.h"
+#include "wayland_platform.h"
 #include "xdg-shell-protocol.h"
 #include "logger/logger.h"
 
@@ -27,9 +27,9 @@ namespace Engine {
     void seat_name(void *data, wl_seat *seat, const char *name);
     void shell_ping(void *data, xdg_wm_base *sh, uint32_t ser);
     void draw_new_frame(void *data, wl_callback *cb, uint32_t a);
-    void resize_window(LinuxPlatform *platform);
-    void draw(LinuxPlatform *platform);
-    int allocate_shared_memory(LinuxPlatform *platform, uint64_t sz);
+    void resize_window(WaylandPlatform *platform);
+    void draw(WaylandPlatform *platform);
+    int allocate_shared_memory(WaylandPlatform *platform, uint64_t sz);
     void seat_capabilities(void *data, wl_seat *seat, uint32_t cap);
     void keyboard_repeat_info(void *data, wl_keyboard *kb, int32_t rate, int32_t del);
     void keyboard_modifiers(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp);
@@ -39,7 +39,7 @@ namespace Engine {
     void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz);
     void translate_keycode();
 
-    LinuxPlatform::LinuxPlatform() {
+    WaylandPlatform::WaylandPlatform() {
         mCloseWindow = false;
         mInitialized = false;
 
@@ -57,7 +57,7 @@ namespace Engine {
                               .repeat_info = keyboard_repeat_info };
     }
 
-    StatusCode LinuxPlatform::CreateNewWindow(const char *windowName, i16 x, i16 y, u16 width, u16 height) {
+    StatusCode WaylandPlatform::CreateNewWindow(const char *windowName, i16 x, i16 y, u16 width, u16 height) {
         // Make sure the platform is not initialized already.
         if (mInitialized) return StatusCode::PlatformAlreadyInitialized;
 
@@ -114,7 +114,7 @@ namespace Engine {
         return StatusCode::Successful;
     }
 
-    StatusCode LinuxPlatform::CloseWindow() {
+    StatusCode WaylandPlatform::CloseWindow() {
         // Disposing keyboard structure.
         if (mpKeyboard) wl_keyboard_destroy(mpKeyboard);
 
@@ -156,11 +156,11 @@ namespace Engine {
         return StatusCode::Successful;
     }
 
-    bool LinuxPlatform::PollForEvents() {
+    bool WaylandPlatform::PollForEvents() {
         return true;
     }
 
-    void LinuxPlatform::SleepForDuration(u64 duration) {
+    void WaylandPlatform::SleepForDuration(u64 duration) {
     }
 
     void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz) {
@@ -174,7 +174,7 @@ namespace Engine {
 
     void on_key_press(void *data, wl_keyboard *kb, uint32_t ser, uint32_t t, uint32_t key, uint32_t state) {
         if (key == 1) {
-            ((LinuxPlatform *)data)->IssueTerminateCommand();
+            ((WaylandPlatform *)data)->IssueTerminateCommand();
         }
 
         if (state == 1)
@@ -190,13 +190,13 @@ namespace Engine {
     }
 
     void seat_capabilities(void *data, wl_seat *seat, uint32_t cap) {
-        if (cap & WL_SEAT_CAPABILITY_KEYBOARD && !((LinuxPlatform *)data)->GetKeyboard()) {
-            ((LinuxPlatform *)data)->SetKeyboard(wl_seat_get_keyboard(seat));
-            wl_keyboard_add_listener(((LinuxPlatform *)data)->GetKeyboard(), ((LinuxPlatform *)data)->GetKeyboardListener(), data);
+        if (cap & WL_SEAT_CAPABILITY_KEYBOARD && !((WaylandPlatform *)data)->GetKeyboard()) {
+            ((WaylandPlatform *)data)->SetKeyboard(wl_seat_get_keyboard(seat));
+            wl_keyboard_add_listener(((WaylandPlatform *)data)->GetKeyboard(), ((WaylandPlatform *)data)->GetKeyboardListener(), data);
         }
     }
 
-    int allocate_shared_memory(LinuxPlatform *platform, uint64_t sz) {
+    int allocate_shared_memory(WaylandPlatform *platform, uint64_t sz) {
         int fd = shm_open(platform->mpWindowName, O_RDWR | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
 
         shm_unlink(platform->mpWindowName);
@@ -205,7 +205,7 @@ namespace Engine {
         return fd;
     }
 
-    void draw(LinuxPlatform *platform) {
+    void draw(WaylandPlatform *platform) {
         memset(platform->GetPixels(), 255, platform->mWindowWidth * platform->mWindowHeight * 4);
 
         wl_surface_attach(platform->GetSurface(), platform->GetBuffer(), 0, 0);
@@ -213,7 +213,7 @@ namespace Engine {
         wl_surface_commit(platform->GetSurface());
     }
 
-    void resize_window(LinuxPlatform *platform) {
+    void resize_window(WaylandPlatform *platform) {
         int size = platform->mWindowHeight * platform->mWindowWidth * 4;
         int fd = allocate_shared_memory(platform, size);
 
@@ -232,7 +232,7 @@ namespace Engine {
     void draw_new_frame(void *data, wl_callback *cb, uint32_t a) {
         wl_callback_destroy(cb);
 
-        LinuxPlatform *platform = (LinuxPlatform *)data;
+        WaylandPlatform *platform = (WaylandPlatform *)data;
 
         cb = wl_surface_frame(platform->GetSurface());
         wl_callback_add_listener(cb, platform->GetCallbackListener(), platform);
@@ -249,15 +249,15 @@ namespace Engine {
 
     void on_global_object_available(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v) {
         if (strcmp(intf, wl_compositor_interface.name) == 0) {
-            ((LinuxPlatform *)data)->SetCompositor((wl_compositor *)wl_registry_bind(reg, name, &wl_compositor_interface, 4));
+            ((WaylandPlatform *)data)->SetCompositor((wl_compositor *)wl_registry_bind(reg, name, &wl_compositor_interface, 4));
         } else if (strcmp(intf, wl_shm_interface.name) == 0) {
-            ((LinuxPlatform *)data)->SetSharedMemory((wl_shm *)wl_registry_bind(reg, name, &wl_shm_interface, 1));
+            ((WaylandPlatform *)data)->SetSharedMemory((wl_shm *)wl_registry_bind(reg, name, &wl_shm_interface, 1));
         } else if (strcmp(intf, xdg_wm_base_interface.name) == 0) {
-            ((LinuxPlatform *)data)->SetWmBase((xdg_wm_base *)wl_registry_bind(reg, name, &xdg_wm_base_interface, 1));
-            xdg_wm_base_add_listener(((LinuxPlatform *)data)->GetWmBase(), ((LinuxPlatform *)data)->GetWmBaseListener(), data);
+            ((WaylandPlatform *)data)->SetWmBase((xdg_wm_base *)wl_registry_bind(reg, name, &xdg_wm_base_interface, 1));
+            xdg_wm_base_add_listener(((WaylandPlatform *)data)->GetWmBase(), ((WaylandPlatform *)data)->GetWmBaseListener(), data);
         } else if (strcmp(intf, wl_seat_interface.name) == 0) {
-            ((LinuxPlatform *)data)->SetSeat((wl_seat *)wl_registry_bind(reg, name, &wl_seat_interface, 1));
-            wl_seat_add_listener(((LinuxPlatform *)data)->GetSeat(), ((LinuxPlatform *)data)->GetSeatListener(), data);
+            ((WaylandPlatform *)data)->SetSeat((wl_seat *)wl_registry_bind(reg, name, &wl_seat_interface, 1));
+            wl_seat_add_listener(((WaylandPlatform *)data)->GetSeat(), ((WaylandPlatform *)data)->GetSeatListener(), data);
         }
     }
 
@@ -267,7 +267,7 @@ namespace Engine {
     void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
         xdg_surface_ack_configure(xdg_surface, serial);
 
-        LinuxPlatform *platform = (LinuxPlatform *)data;
+        WaylandPlatform *platform = (WaylandPlatform *)data;
 
         if (!platform->GetPixels()) resize_window(platform);
 
@@ -279,7 +279,7 @@ namespace Engine {
             return;
         }
 
-        LinuxPlatform *platform = (LinuxPlatform *)data;
+        WaylandPlatform *platform = (WaylandPlatform *)data;
 
         if (platform->mWindowWidth != nw || platform->mWindowHeight != nh) {
             munmap(platform->GetPixels(), platform->mWindowWidth * platform->mWindowHeight * 4);
@@ -292,7 +292,7 @@ namespace Engine {
     }
 
     void close_top_level_object(void *data, xdg_toplevel *top) {
-        ((LinuxPlatform *)data)->IssueTerminateCommand();
+        ((WaylandPlatform *)data)->IssueTerminateCommand();
     }
 
 } // namespace Engine
