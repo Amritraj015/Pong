@@ -3,21 +3,11 @@
 
 #if defined(PLATFORM_LINUX)
 
-#include <cstring>
-#include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <wayland-client.h>
-
 #include "platform.h"
 #include "xdg-shell-protocol.h"
 
 namespace Engine {
+
     class LinuxPlatform : public Platform {
         public:
             LinuxPlatform(const Platform &) = delete;
@@ -133,15 +123,6 @@ namespace Engine {
             xdg_wm_base_listener mpXdgShellListener;
             xdg_toplevel_listener mTopLevelListener;
             wl_keyboard_listener mKeyboardListener;
-
-            // void (*OnGlobalObjectAvailable)(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t
-            // v); void (*OnGlobalObjectRemoval)(void *data, struct wl_registry *reg, uint32_t name); void
-            // (*DrawNewFrame)(void *data, wl_callback *cb, uint32_t a); void (*SeatCapabilities)(void *data, struct
-            // wl_seat *seat, uint32_t cap); void (*SeatName)(void *data, struct wl_seat *seat, const char *name); void
-            // (*ConfigureSurface)(void *data, xdg_surface *xdg_surface, uint32_t serial); void (*ShellPing)(void *data,
-            // struct xdg_wm_base *sh, uint32_t ser); void (*ConfigureTopLevelObject)(void *data, xdg_toplevel *top,
-            // int32_t nw, int32_t nh, wl_array *stat); void (*CloseTopLevelObject)(void *data, struct xdg_toplevel
-            // *top); void (*ResizeWindow)(); void (*Draw)(); int (*AllocateSharedMemory)(uint64_t sz);
     };
 }; // namespace Engine
 
