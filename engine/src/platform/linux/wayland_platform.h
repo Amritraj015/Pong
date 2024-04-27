@@ -3,17 +3,17 @@
 
 #if defined(PLATFORM_LINUX)
 
-#include "platform.h"
+#include "platform/platform.h"
 #include "xdg-shell-protocol.h"
 
 namespace Engine {
 
-    class LinuxPlatform : public Platform {
+    class WaylandPlatform : public Platform {
         public:
-            LinuxPlatform(const Platform &) = delete;
-            void operator=(LinuxPlatform const &) = delete;
+            WaylandPlatform(const Platform &) = delete;
+            void operator=(WaylandPlatform const &) = delete;
 
-            LinuxPlatform();
+            WaylandPlatform();
 
             StatusCode CreateNewWindow(const char *windowName, i16 x, i16 y, u16 width, u16 height);
             StatusCode CloseWindow();

@@ -14,3 +14,5 @@ template <typename E> constexpr typename std::underlying_type<E>::type to_underl
         LFATAL(message, ##__VA_ARGS__)                                                                                                     \
         return statusCode;                                                                                                                 \
     }
+
+#define BIT(x) (1 << x)
