@@ -19,42 +19,84 @@
 #include "logger/logger.h"
 
 namespace Engine {
-    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat);
-    void close_top_level_object(void *data, xdg_toplevel *top);
-    void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial);
-    void on_global_object_removal(void *data, wl_registry *reg, uint32_t name);
-    void on_global_object_available(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v);
-    void seat_name(void *data, wl_seat *seat, const char *name);
-    void shell_ping(void *data, xdg_wm_base *sh, uint32_t ser);
-    void draw_new_frame(void *data, wl_callback *cb, uint32_t a);
-    void resize_window(WaylandPlatform *platform);
-    void draw(WaylandPlatform *platform);
-    int allocate_shared_memory(WaylandPlatform *platform, uint64_t sz);
-    void seat_capabilities(void *data, wl_seat *seat, uint32_t cap);
+    void enter(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    void leave(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface);
+    void motion(void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    void button(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
+    void axis(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
+    void frame(void *data, wl_pointer *pointer);
+    void axis_source(void *data, wl_pointer *pointer, uint32_t axis_source);
+    void axis_stop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis);
+    void axis_discrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete);
+    void axis_value120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120);
+    void axis_relative_direction(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction);
+
     void keyboard_repeat_info(void *data, wl_keyboard *kb, int32_t rate, int32_t del);
     void keyboard_modifiers(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp);
     void on_key_press(void *data, wl_keyboard *kb, uint32_t ser, uint32_t t, uint32_t key, uint32_t state);
     void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc);
     void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc, wl_array *keys);
     void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz);
+
+    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat);
+    void close_top_level_object(void *data, xdg_toplevel *top);
+    void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial);
+    void on_global_object_removal(void *data, wl_registry *regstry, uint32_t name);
+    void on_global_object_available(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t v);
+    void seat_name(void *data, wl_seat *seat, const char *name);
+    void shell_ping(void *data, xdg_wm_base *wmBase, uint32_t serial);
+    void draw_new_frame(void *data, wl_callback *cb, uint32_t a);
+    void resize_window(WaylandPlatform *platform);
+    void draw(WaylandPlatform *platform);
+    i32 allocate_shared_memory(WaylandPlatform *platform, uint64_t sz);
+    void seat_capabilities(void *data, wl_seat *seat, uint32_t capabilities);
     void translate_keycode();
 
     WaylandPlatform::WaylandPlatform() {
         mCloseWindow = false;
         mInitialized = false;
 
-        mRegistryListener = { .global = on_global_object_available, .global_remove = on_global_object_removal };
         mCallbackListener = { .done = draw_new_frame };
-        mSeatListener = { .capabilities = seat_capabilities, .name = seat_name };
         mSurfaceListener = { .configure = configure_surface };
         mpXdgShellListener = { .ping = shell_ping };
-        mTopLevelListener = { .configure = configure_top_level_object, .close = close_top_level_object };
-        mKeyboardListener = { .keymap = keyboard_mapping,
-                              .enter = on_keyboard_enter,
-                              .leave = on_keyboard_leave,
-                              .key = on_key_press,
-                              .modifiers = keyboard_modifiers,
-                              .repeat_info = keyboard_repeat_info };
+
+        mRegistryListener = {
+            .global = on_global_object_available,
+            .global_remove = on_global_object_removal,
+        };
+
+        mSeatListener = {
+            .capabilities = seat_capabilities,
+            .name = seat_name,
+        };
+
+        mTopLevelListener = {
+            .configure = configure_top_level_object,
+            .close = close_top_level_object,
+        };
+
+        mKeyboardListener = {
+            .keymap = keyboard_mapping,
+            .enter = on_keyboard_enter,
+            .leave = on_keyboard_leave,
+            .key = on_key_press,
+            .modifiers = keyboard_modifiers,
+            .repeat_info = keyboard_repeat_info,
+        };
+
+        mPointerListener = {
+            .enter = enter,
+            .leave = leave,
+            .motion = motion,
+            .button = button,
+            .axis = axis,
+            .frame = frame,
+            .axis_source = axis_source,
+            .axis_stop = axis_stop,
+            .axis_discrete = axis_discrete,
+            .axis_value120 = axis_value120,
+            .axis_relative_direction = axis_relative_direction,
+        };
     }
 
     StatusCode WaylandPlatform::CreateNewWindow(const char *windowName, i16 x, i16 y, u16 width, u16 height) {
@@ -93,7 +135,7 @@ namespace Engine {
         mpSurface = wl_compositor_create_surface(mpCompositor);
 
         // If surface creation failed then return with an error.
-        if (mpSurface == NULL) return StatusCode::WaylandCannotCreateSurface;
+        if (NULL == mpSurface) return StatusCode::WaylandCannotCreateSurface;
 
         LTRACE("Created surface")
 
@@ -115,6 +157,11 @@ namespace Engine {
     }
 
     StatusCode WaylandPlatform::CloseWindow() {
+        // Disposing pointer structure.
+        if (mpPointer) wl_pointer_destroy(mpPointer);
+
+        LTRACE("Destroyed pointer structure")
+
         // Disposing keyboard structure.
         if (mpKeyboard) wl_keyboard_destroy(mpKeyboard);
 
@@ -167,20 +214,23 @@ namespace Engine {
     }
 
     void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc, wl_array *keys) {
+        LDEBUG("Keyboard enter event")
     }
 
     void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc) {
+        LDEBUG("Keyboard leave event")
     }
 
     void on_key_press(void *data, wl_keyboard *kb, uint32_t ser, uint32_t t, uint32_t key, uint32_t state) {
-        if (key == 1) {
+        if (1 == key) {
             ((WaylandPlatform *)data)->IssueTerminateCommand();
         }
 
-        if (state == 1)
+        if (1 == state) {
             LDEBUG("Key down: %i", static_cast<char>(key))
-        else
+        } else {
             LDEBUG("Key up: %i", static_cast<char>(key))
+        }
     }
 
     void keyboard_modifiers(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp) {
@@ -189,40 +239,47 @@ namespace Engine {
     void keyboard_repeat_info(void *data, wl_keyboard *kb, int32_t rate, int32_t del) {
     }
 
-    void seat_capabilities(void *data, wl_seat *seat, uint32_t cap) {
-        if (cap & WL_SEAT_CAPABILITY_KEYBOARD && !((WaylandPlatform *)data)->GetKeyboard()) {
-            ((WaylandPlatform *)data)->SetKeyboard(wl_seat_get_keyboard(seat));
-            wl_keyboard_add_listener(((WaylandPlatform *)data)->GetKeyboard(), ((WaylandPlatform *)data)->GetKeyboardListener(), data);
+    void seat_capabilities(void *data, wl_seat *seat, uint32_t capabilities) {
+        WaylandPlatform *platform = (WaylandPlatform *)data;
+
+        if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD && !platform->GetKeyboard()) {
+            platform->SetKeyboard(wl_seat_get_keyboard(seat));
+            wl_keyboard_add_listener(platform->GetKeyboard(), platform->GetKeyboardListener(), platform);
+        }
+
+        if (capabilities & WL_SEAT_CAPABILITY_POINTER && !platform->GetPointer()) {
+            platform->SetPointer(wl_seat_get_pointer(seat));
+            wl_pointer_add_listener(platform->GetPointer(), platform->GetPointerListener(), platform);
         }
     }
 
-    int allocate_shared_memory(WaylandPlatform *platform, uint64_t sz) {
-        int fd = shm_open(platform->mpWindowName, O_RDWR | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
+    i32 allocate_shared_memory(WaylandPlatform *platform, uint64_t sz) {
+        i32 fd = shm_open(platform->GetWindowName(), O_RDWR | O_CREAT | O_EXCL, S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
 
-        shm_unlink(platform->mpWindowName);
+        shm_unlink(platform->GetWindowName());
         ftruncate(fd, sz);
 
         return fd;
     }
 
     void draw(WaylandPlatform *platform) {
-        memset(platform->GetPixels(), 255, platform->mWindowWidth * platform->mWindowHeight * 4);
+        memset(platform->GetPixels(), 255, platform->GetWindowWidth() * platform->GetWindowHeight() * 4);
 
         wl_surface_attach(platform->GetSurface(), platform->GetBuffer(), 0, 0);
-        wl_surface_damage_buffer(platform->GetSurface(), 0, 0, platform->mWindowWidth, platform->mWindowHeight);
+        wl_surface_damage_buffer(platform->GetSurface(), 0, 0, platform->GetWindowWidth(), platform->GetWindowHeight());
         wl_surface_commit(platform->GetSurface());
     }
 
     void resize_window(WaylandPlatform *platform) {
-        int size = platform->mWindowHeight * platform->mWindowWidth * 4;
-        int fd = allocate_shared_memory(platform, size);
+        i32 size = platform->GetWindowHeight() * platform->GetWindowWidth() * 4;
+        i32 fd = allocate_shared_memory(platform, size);
 
         platform->SetPixels(mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
 
         wl_shm_pool *pool = wl_shm_create_pool(platform->GetSharedMemory(), fd, size);
 
-        platform->SetBuffer(wl_shm_pool_create_buffer(pool, 0, platform->mWindowWidth, platform->mWindowHeight, platform->mWindowWidth * 4,
-                                                      WL_SHM_FORMAT_ARGB8888));
+        platform->SetBuffer(wl_shm_pool_create_buffer(pool, 0, platform->GetWindowWidth(), platform->GetWindowHeight(),
+                                                      platform->GetWindowWidth() * 4, WL_SHM_FORMAT_ARGB8888));
 
         wl_shm_pool_destroy(pool);
 
@@ -240,28 +297,28 @@ namespace Engine {
         draw(platform);
     }
 
-    void shell_ping(void *data, xdg_wm_base *sh, uint32_t ser) {
-        xdg_wm_base_pong(sh, ser);
+    void shell_ping(void *data, xdg_wm_base *wmBase, uint32_t serial) {
+        xdg_wm_base_pong(wmBase, serial);
     }
 
     void seat_name(void *data, wl_seat *seat, const char *name) {
     }
 
-    void on_global_object_available(void *data, wl_registry *reg, uint32_t name, const char *intf, uint32_t v) {
-        if (strcmp(intf, wl_compositor_interface.name) == 0) {
-            ((WaylandPlatform *)data)->SetCompositor((wl_compositor *)wl_registry_bind(reg, name, &wl_compositor_interface, 4));
-        } else if (strcmp(intf, wl_shm_interface.name) == 0) {
-            ((WaylandPlatform *)data)->SetSharedMemory((wl_shm *)wl_registry_bind(reg, name, &wl_shm_interface, 1));
-        } else if (strcmp(intf, xdg_wm_base_interface.name) == 0) {
-            ((WaylandPlatform *)data)->SetWmBase((xdg_wm_base *)wl_registry_bind(reg, name, &xdg_wm_base_interface, 1));
+    void on_global_object_available(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t v) {
+        if (0 == strcmp(interface, wl_compositor_interface.name)) {
+            ((WaylandPlatform *)data)->SetCompositor((wl_compositor *)wl_registry_bind(registry, name, &wl_compositor_interface, 4));
+        } else if (0 == strcmp(interface, wl_shm_interface.name)) {
+            ((WaylandPlatform *)data)->SetSharedMemory((wl_shm *)wl_registry_bind(registry, name, &wl_shm_interface, 1));
+        } else if (0 == strcmp(interface, xdg_wm_base_interface.name)) {
+            ((WaylandPlatform *)data)->SetWmBase((xdg_wm_base *)wl_registry_bind(registry, name, &xdg_wm_base_interface, 1));
             xdg_wm_base_add_listener(((WaylandPlatform *)data)->GetWmBase(), ((WaylandPlatform *)data)->GetWmBaseListener(), data);
-        } else if (strcmp(intf, wl_seat_interface.name) == 0) {
-            ((WaylandPlatform *)data)->SetSeat((wl_seat *)wl_registry_bind(reg, name, &wl_seat_interface, 1));
+        } else if (0 == strcmp(interface, wl_seat_interface.name)) {
+            ((WaylandPlatform *)data)->SetSeat((wl_seat *)wl_registry_bind(registry, name, &wl_seat_interface, 1));
             wl_seat_add_listener(((WaylandPlatform *)data)->GetSeat(), ((WaylandPlatform *)data)->GetSeatListener(), data);
         }
     }
 
-    void on_global_object_removal(void *data, wl_registry *reg, uint32_t name) {
+    void on_global_object_removal(void *data, wl_registry *registry, uint32_t name) {
     }
 
     void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
@@ -274,18 +331,18 @@ namespace Engine {
         draw(platform);
     }
 
-    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat) {
-        if (!nw && !nh) {
+    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t newWidth, int32_t newHeight, wl_array *stat) {
+        if (!newWidth && !newHeight) {
             return;
         }
 
         WaylandPlatform *platform = (WaylandPlatform *)data;
 
-        if (platform->mWindowWidth != nw || platform->mWindowHeight != nh) {
-            munmap(platform->GetPixels(), platform->mWindowWidth * platform->mWindowHeight * 4);
+        if (platform->GetWindowWidth() != newWidth || platform->GetWindowHeight() != newHeight) {
+            munmap(platform->GetPixels(), platform->GetWindowWidth() * platform->GetWindowHeight() * 4);
 
-            platform->mWindowWidth = nw;
-            platform->mWindowHeight = nh;
+            platform->SetWindowWidth(newWidth);
+            platform->SetWindowHeight(newHeight);
 
             resize_window(platform);
         }
@@ -295,6 +352,39 @@ namespace Engine {
         ((WaylandPlatform *)data)->IssueTerminateCommand();
     }
 
+    void enter(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
+        LDEBUG("Mouse entered window at (x, y) - (%i, %i)", surface_x, surface_y)
+    }
+
+    void leave(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface) {
+        LDEBUG("Mouse left window")
+    }
+
+    void motion(void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y) {
+        LDEBUG("Mouse moved to - (%i, %i)", surface_x, surface_y)
+    }
+
+    void button(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
+        if (1 == state)
+            LDEBUG("Mouse button %i down", button)
+        else
+            LDEBUG("Mouse button %i up", button)
+    }
+
+    void axis(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
+    }
+    void frame(void *data, wl_pointer *pointer) {
+    }
+    void axis_source(void *data, wl_pointer *pointer, uint32_t axis_source) {
+    }
+    void axis_stop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis) {
+    }
+    void axis_discrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete) {
+    }
+    void axis_value120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120) {
+    }
+    void axis_relative_direction(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction) {
+    }
 } // namespace Engine
 
 #endif

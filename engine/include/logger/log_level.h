@@ -1,7 +1,9 @@
 #pragma once
 
+#include "defines.h"
+
 namespace Engine {
-    enum class LogLevel {
+    enum class LogLevel : u8 {
         Fatal = 0, // A variant that can be used to log fatal errors.
         Error = 1, // A variant that can be used to log errors.
         Warn = 2,  // A variant that can be used to log warnings.
