@@ -2,9 +2,8 @@
 #include "logger/logger.h"
 
 namespace Engine {
-    ApplicationManager::ApplicationManager(const std::shared_ptr<Platform> &platform, Application *application) {
-        mpPlatform = platform;
-        mpApp = application;
+    ApplicationManager::ApplicationManager(Platform *platform, Application *application)
+        : mpPlatform(platform), mpApplication(application) {
     }
 
     StatusCode ApplicationManager::RunApplication() {
@@ -25,15 +24,15 @@ namespace Engine {
         LINFO("***************************************************************")
         LINFO("Application details")
         LINFO("***************************************************************")
-        LINFO("Application name              | %s", mpApp->name)
-        LINFO("Window Height requested       | %i", mpApp->windowHeight)
-        LINFO("Window Width requested        | %i", mpApp->windowWidth)
-        LINFO("Window Starting X position    | %i", mpApp->windowStartX)
-        LINFO("Window Starting Y position    | %i", mpApp->windowStartY)
+        LINFO("Application name              | %s", mpApplication->name)
+        LINFO("Window Height requested       | %i", mpApplication->windowHeight)
+        LINFO("Window Width requested        | %i", mpApplication->windowWidth)
+        LINFO("Window Starting X position    | %i", mpApplication->windowStartX)
+        LINFO("Window Starting Y position    | %i", mpApplication->windowStartY)
         LINFO("***************************************************************")
 
-        statusCode =
-            mpPlatform->CreateNewWindow(mpApp->name, mpApp->windowStartX, mpApp->windowStartY, mpApp->windowWidth, mpApp->windowHeight);
+        statusCode = mpPlatform->CreateNewWindow(mpApplication->name, mpApplication->windowStartX, mpApplication->windowStartY,
+                                                 mpApplication->windowWidth, mpApplication->windowHeight);
 
         ENSURE_SUCCESS(statusCode, "StatusCode: %i - Failed to create window.", statusCode)
 

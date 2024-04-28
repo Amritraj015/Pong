@@ -1,4 +1,5 @@
 #pragma once
+
 #include "defines.h"
 
 #if defined(PLATFORM_LINUX)
@@ -7,10 +8,9 @@
 #include "xdg-shell-protocol.h"
 
 namespace Engine {
-
     class WaylandPlatform : public Platform {
         public:
-            WaylandPlatform(const Platform &) = delete;
+            WaylandPlatform(const WaylandPlatform &) = delete;
             void operator=(WaylandPlatform const &) = delete;
 
             WaylandPlatform();
@@ -72,6 +72,14 @@ namespace Engine {
                 mpKeyboard = kb;
             }
 
+            inline wl_pointer *GetPointer() const {
+                return mpPointer;
+            }
+
+            inline const void SetPointer(wl_pointer *pointer) {
+                mpPointer = pointer;
+            }
+
             inline const wl_keyboard_listener *GetKeyboardListener() const {
                 return &mKeyboardListener;
             }
@@ -96,13 +104,36 @@ namespace Engine {
                 return &mCallbackListener;
             }
 
-            bool mCloseWindow;
-            int mWindowWidth;
-            int mWindowHeight;
-            const char *mpWindowName;
+            inline const i32 GetWindowWidth() const {
+                return mWindowWidth;
+            }
+
+            const inline void SetWindowWidth(i32 width) {
+                mWindowWidth = width;
+            }
+
+            inline const i32 GetWindowHeight() const {
+                return mWindowHeight;
+            }
+
+            const inline void SetWindowHeight(i32 height) {
+                mWindowHeight = height;
+            }
+
+            inline const char *GetWindowName() const {
+                return mpWindowName;
+            }
+
+            inline const wl_pointer_listener *GetPointerListener() const {
+                return &mPointerListener;
+            }
 
         private:
             bool mInitialized;
+            bool mCloseWindow;
+            i32 mWindowWidth;
+            i32 mWindowHeight;
+            const char *mpWindowName;
 
             wl_display *mpDisplay;
             wl_surface *mpSurface;
@@ -113,6 +144,7 @@ namespace Engine {
             xdg_toplevel *mpXdgTopLevelObject;
             xdg_surface *mpXdgSurface;
             wl_keyboard *mpKeyboard;
+            wl_pointer *mpPointer;
             wl_buffer *mpBuffer;
             void *mpPixel;
 
@@ -123,6 +155,7 @@ namespace Engine {
             xdg_wm_base_listener mpXdgShellListener;
             xdg_toplevel_listener mTopLevelListener;
             wl_keyboard_listener mKeyboardListener;
+            wl_pointer_listener mPointerListener;
     };
 }; // namespace Engine
 

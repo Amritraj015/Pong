@@ -6,7 +6,7 @@
 
 int main() {
     // Get the current platform.
-    std::shared_ptr<Engine::Platform> platform = Engine::get_platform();
+    Engine::Platform *platform = Engine::get_platform();
 
     // Terminate if the application is running on an unsupported platform.
     if (nullptr == platform) return to_underlying(Engine::StatusCode::UnsupportedPlatform);
@@ -23,6 +23,6 @@ int main() {
     // Initialize the application.
     Engine::StatusCode statusCode = applicationManager->RunApplication();
 
-    // Exit with a succesful status code.
+    // Exit with a successful status code.
     return to_underlying(statusCode);
 }

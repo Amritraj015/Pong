@@ -1,7 +1,9 @@
 #pragma once
 
+#include "defines.h"
+
 namespace Engine {
-    enum class EventType {
+    enum class EventType : u8 {
         WindowClose,         // Window close event.
         WindowResize,        // Window resize event.
         WindowFocus,         // Window focus event.
