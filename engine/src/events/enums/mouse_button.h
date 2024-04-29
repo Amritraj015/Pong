@@ -9,6 +9,6 @@ namespace Engine {
         Right = 2,           // The right mouse button.
         ScrollWheelUp = 3,   // Scroll wheel up
         ScrollWheelDown = 4, // Scroll wheel down
-        Unknown = 5          // Unkown/Unsupported button
+        Unknown = 5          // Unknown/Unsupported button
     };
 }

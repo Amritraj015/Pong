@@ -26,7 +26,7 @@ namespace Engine {
             }
 
         private:
-            const static i32 msCategoryFlags = to_underlying(EventCategory::Mouse) | to_underlying(EventCategory::Input);
             const i32 mMouseX, mMouseY;
+            const static i32 msCategoryFlags = to_underlying(EventCategory::Mouse) | to_underlying(EventCategory::Input);
     };
 } // namespace Engine

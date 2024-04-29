@@ -28,8 +28,8 @@ namespace Engine {
             }
 
         private:
-            const static i32 msCategoryFlags = to_underlying(EventCategory::Keyboard) | to_underlying(EventCategory::Input);
             const bool mPressed;
             const Key mKeycode;
+            const static i32 msCategoryFlags = to_underlying(EventCategory::Keyboard) | to_underlying(EventCategory::Input);
     };
 } // namespace Engine

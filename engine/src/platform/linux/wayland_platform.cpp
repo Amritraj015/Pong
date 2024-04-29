@@ -2,46 +2,38 @@
 
 #ifdef PLATFORM_LINUX
 
-#include <cstring>
 #include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <wayland-client.h>
-#include <xkbcommon/xkbcommon-keysyms.h>
 
 #include "wayland_platform.h"
 #include "xdg-shell-protocol.h"
-#include "logger/logger.h"
 
 namespace Engine {
-    void enter(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y);
-    void leave(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface);
-    void motion(void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y);
-    void button(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
-    void axis(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
-    void frame(void *data, wl_pointer *pointer);
-    void axis_source(void *data, wl_pointer *pointer, uint32_t axis_source);
-    void axis_stop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis);
-    void axis_discrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete);
-    void axis_value120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120);
-    void axis_relative_direction(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction);
+    void on_mouse_enter(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    void on_mouse_leave(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface);
+    void on_mouse_motion(void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    void on_mouse_input(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
+    void on_mouse_axis(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
+    void on_mouse_frame(void *data, wl_pointer *pointer);
+    void on_mouse_axis_source(void *data, wl_pointer *pointer, uint32_t axis_source);
+    void on_mouse_axis_stop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis);
+    void on_mouse_axis_discrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete);
+    void on_mouse_axis_value120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120);
+    void on_mouse_axis_relative_direction(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction);
 
     void keyboard_repeat_info(void *data, wl_keyboard *kb, int32_t rate, int32_t del);
     void keyboard_modifiers(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp);
     void on_key_press(void *data, wl_keyboard *kb, uint32_t ser, uint32_t t, uint32_t key, uint32_t state);
-    void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc);
-    void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc, wl_array *keys);
+    void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface);
+    void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface, wl_array *keys);
     void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz);
 
-    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t nw, int32_t nh, wl_array *stat);
+    void configure_top_level_object(void *data, xdg_toplevel *top, int32_t newWidth, int32_t newHeight, wl_array *stat);
     void close_top_level_object(void *data, xdg_toplevel *top);
     void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial);
-    void on_global_object_removal(void *data, wl_registry *regstry, uint32_t name);
+    void on_global_object_removal(void *data, wl_registry *registry, uint32_t name);
     void on_global_object_available(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t v);
     void seat_name(void *data, wl_seat *seat, const char *name);
     void shell_ping(void *data, xdg_wm_base *wmBase, uint32_t serial);
@@ -85,17 +77,17 @@ namespace Engine {
         };
 
         mPointerListener = {
-            .enter = enter,
-            .leave = leave,
-            .motion = motion,
-            .button = button,
-            .axis = axis,
-            .frame = frame,
-            .axis_source = axis_source,
-            .axis_stop = axis_stop,
-            .axis_discrete = axis_discrete,
-            .axis_value120 = axis_value120,
-            .axis_relative_direction = axis_relative_direction,
+            .enter = on_mouse_enter,
+            .leave = on_mouse_leave,
+            .motion = on_mouse_motion,
+            .button = on_mouse_input,
+            .axis = on_mouse_axis,
+            .frame = on_mouse_frame,
+            .axis_source = on_mouse_axis_source,
+            .axis_stop = on_mouse_axis_stop,
+            .axis_discrete = on_mouse_axis_discrete,
+            .axis_value120 = on_mouse_axis_value120,
+            .axis_relative_direction = on_mouse_axis_relative_direction,
         };
     }
 
@@ -111,10 +103,10 @@ namespace Engine {
         mpWindowName = windowName;
 
         // Let's try and connect to the display.
-        mpDisplay = wl_display_connect(NULL);
+        mpDisplay = wl_display_connect(nullptr);
 
         // If we couldn't connect to the display then return with an error status.
-        if (NULL == mpDisplay) return StatusCode::WaylandCannotConnectToDisplay;
+        if (nullptr == mpDisplay) return StatusCode::WaylandCannotConnectToDisplay;
 
         LTRACE("Connected to display")
 
@@ -127,7 +119,7 @@ namespace Engine {
         wl_display_roundtrip(mpDisplay);
 
         // If we couldn't find a Wayland compositor then return with an error status.
-        if (NULL == mpCompositor) return StatusCode::WaylandCannotFindCompositor;
+        if (nullptr == mpCompositor) return StatusCode::WaylandCannotFindCompositor;
 
         LTRACE("Wayland compositor found")
 
@@ -135,18 +127,38 @@ namespace Engine {
         mpSurface = wl_compositor_create_surface(mpCompositor);
 
         // If surface creation failed then return with an error.
-        if (NULL == mpSurface) return StatusCode::WaylandCannotCreateSurface;
+        if (nullptr == mpSurface) return StatusCode::WaylandCannotCreateSurface;
 
-        LTRACE("Created surface")
+        LTRACE("Created wayland surface")
 
         wl_callback *callback = wl_surface_frame(mpSurface);
         wl_callback_add_listener(callback, &mCallbackListener, this);
 
+        // Let's create XDG surface.
         mpXdgSurface = xdg_wm_base_get_xdg_surface(mpWmBase, mpSurface);
+
+        // If XDG surface creation failed then return with an error.
+        if (nullptr == mpXdgSurface) return StatusCode::WaylandCannotCreateXdgSurface;
+
+        LTRACE("Created XDG surface")
+
+        // Attach listeners to the XDG surface.
         xdg_surface_add_listener(mpXdgSurface, &mSurfaceListener, this);
+
+        // Assign the top level window object.
         mpXdgTopLevelObject = xdg_surface_get_toplevel(mpXdgSurface);
+
+        // If XDG surface creation failed then return with an error.
+        if (nullptr == mpXdgTopLevelObject) return StatusCode::WaylandCannotCreateTopLevelWindow;
+
+        LTRACE("Created top level window")
+
+        // Add listeners to the top level window.
         xdg_toplevel_add_listener(mpXdgTopLevelObject, &mTopLevelListener, this);
+
+        // Set title for the top level window.
         xdg_toplevel_set_title(mpXdgTopLevelObject, windowName);
+
         wl_surface_commit(mpSurface);
 
         while (wl_display_dispatch(mpDisplay)) {
@@ -157,44 +169,38 @@ namespace Engine {
     }
 
     StatusCode WaylandPlatform::CloseWindow() {
-        // Disposing pointer structure.
-        if (mpPointer) wl_pointer_destroy(mpPointer);
+        // Dispose pointer structure.
+        wl_pointer_release(mpPointer);
+        LTRACE("Released pointer resources")
 
-        LTRACE("Destroyed pointer structure")
+        // Dispose keyboard structure.
+        wl_keyboard_release(mpKeyboard);
+        LTRACE("Released keyboard resoueces")
 
-        // Disposing keyboard structure.
-        if (mpKeyboard) wl_keyboard_destroy(mpKeyboard);
-
-        LTRACE("Destroyed keyboard structure")
-
+        // Dispose seat.
         wl_seat_release(mpSeat);
-
         LTRACE("Released seat resources")
 
         // Destroy buffer.
         if (mpBuffer) wl_buffer_destroy(mpBuffer);
 
-        LTRACE("Destroyed buffer")
+        LTRACE("Destroyed wayland buffer")
 
         // Destroy XDG top level object.
         xdg_toplevel_destroy(mpXdgTopLevelObject);
-
         LTRACE("Destroyed XDG top level object")
 
         // Destroy XDG surface.
         xdg_surface_destroy(mpXdgSurface);
-
         LTRACE("Destroyed XDG surface")
 
         // Destroy surface.
         wl_surface_destroy(mpSurface);
-
-        LTRACE("Destroyed surface")
+        LTRACE("Destroyed wayland surface")
 
         // Disconnect from display.
         wl_display_disconnect(mpDisplay);
-
-        LTRACE("Disconnected from display")
+        LTRACE("Disconnected from wayland display")
 
         // Set the initialized flag as false.
         mInitialized = false;
@@ -213,11 +219,11 @@ namespace Engine {
     void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz) {
     }
 
-    void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc, wl_array *keys) {
+    void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface, wl_array *keys) {
         LDEBUG("Keyboard enter event")
     }
 
-    void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *srfc) {
+    void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface) {
         LDEBUG("Keyboard leave event")
     }
 
@@ -240,7 +246,7 @@ namespace Engine {
     }
 
     void seat_capabilities(void *data, wl_seat *seat, uint32_t capabilities) {
-        WaylandPlatform *platform = (WaylandPlatform *)data;
+        auto platform = (WaylandPlatform *)data;
 
         if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD && !platform->GetKeyboard()) {
             platform->SetKeyboard(wl_seat_get_keyboard(seat));
@@ -274,7 +280,7 @@ namespace Engine {
         i32 size = platform->GetWindowHeight() * platform->GetWindowWidth() * 4;
         i32 fd = allocate_shared_memory(platform, size);
 
-        platform->SetPixels(mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+        platform->SetPixels(mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
 
         wl_shm_pool *pool = wl_shm_create_pool(platform->GetSharedMemory(), fd, size);
 
@@ -289,7 +295,7 @@ namespace Engine {
     void draw_new_frame(void *data, wl_callback *cb, uint32_t a) {
         wl_callback_destroy(cb);
 
-        WaylandPlatform *platform = (WaylandPlatform *)data;
+        auto platform = (WaylandPlatform *)data;
 
         cb = wl_surface_frame(platform->GetSurface());
         wl_callback_add_listener(cb, platform->GetCallbackListener(), platform);
@@ -302,6 +308,7 @@ namespace Engine {
     }
 
     void seat_name(void *data, wl_seat *seat, const char *name) {
+        LTRACE("Seat name - %s", name)
     }
 
     void on_global_object_available(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t v) {
@@ -324,7 +331,7 @@ namespace Engine {
     void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial) {
         xdg_surface_ack_configure(xdg_surface, serial);
 
-        WaylandPlatform *platform = (WaylandPlatform *)data;
+        auto platform = (WaylandPlatform *)data;
 
         if (!platform->GetPixels()) resize_window(platform);
 
@@ -336,7 +343,7 @@ namespace Engine {
             return;
         }
 
-        WaylandPlatform *platform = (WaylandPlatform *)data;
+        auto platform = (WaylandPlatform *)data;
 
         if (platform->GetWindowWidth() != newWidth || platform->GetWindowHeight() != newHeight) {
             munmap(platform->GetPixels(), platform->GetWindowWidth() * platform->GetWindowHeight() * 4);
@@ -352,38 +359,45 @@ namespace Engine {
         ((WaylandPlatform *)data)->IssueTerminateCommand();
     }
 
-    void enter(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
+    void on_mouse_enter(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
         LDEBUG("Mouse entered window at (x, y) - (%i, %i)", surface_x, surface_y)
     }
 
-    void leave(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface) {
+    void on_mouse_leave(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface) {
         LDEBUG("Mouse left window")
     }
 
-    void motion(void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y) {
+    void on_mouse_motion(void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y) {
         LDEBUG("Mouse moved to - (%i, %i)", surface_x, surface_y)
     }
 
-    void button(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
+    void on_mouse_input(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
         if (1 == state)
             LDEBUG("Mouse button %i down", button)
         else
             LDEBUG("Mouse button %i up", button)
     }
 
-    void axis(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
+    void on_mouse_axis(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
+        LDEBUG("Mouse scrolled: Axis - %i, value: %i", axis, value)
     }
-    void frame(void *data, wl_pointer *pointer) {
+
+    void on_mouse_frame(void *data, wl_pointer *pointer) {
     }
-    void axis_source(void *data, wl_pointer *pointer, uint32_t axis_source) {
+
+    void on_mouse_axis_source(void *data, wl_pointer *pointer, uint32_t axis_source) {
     }
-    void axis_stop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis) {
+
+    void on_mouse_axis_stop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis) {
     }
-    void axis_discrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete) {
+
+    void on_mouse_axis_discrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete) {
     }
-    void axis_value120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120) {
+
+    void on_mouse_axis_value120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120) {
     }
-    void axis_relative_direction(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction) {
+
+    void on_mouse_axis_relative_direction(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction) {
     }
 } // namespace Engine
 

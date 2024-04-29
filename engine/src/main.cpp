@@ -3,6 +3,14 @@
 #include "application/application_manager.h"
 #include "platform/platform_factory.h"
 #include "core/status_code.h"
+#include "logger/logger.h"
+
+#if defined(_DEBUG)
+void *operator new(size_t size) {
+    LTRACE("Allocating: %llu bytes", size)
+    return malloc(size);
+}
+#endif
 
 int main() {
     // Get the current platform.

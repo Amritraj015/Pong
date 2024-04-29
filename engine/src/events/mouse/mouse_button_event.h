@@ -36,11 +36,10 @@ namespace Engine {
             }
 
         private:
-            const static i32 msCategoryFlags =
-                to_underlying(EventCategory::Mouse) | to_underlying(EventCategory::Input) | to_underlying(EventCategory::MouseButton);
-
             const MouseButton mButton;
             const bool mPressed;
             const i32 mMouseX, mMouseY;
+            const static i32 msCategoryFlags =
+                to_underlying(EventCategory::Mouse) | to_underlying(EventCategory::Input) | to_underlying(EventCategory::MouseButton);
     };
 } // namespace Engine
