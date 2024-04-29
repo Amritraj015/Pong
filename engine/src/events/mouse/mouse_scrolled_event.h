@@ -31,10 +31,10 @@ namespace Engine {
             }
 
         private:
-            const static i32 msCategoryFlags = to_underlying(EventCategory::Mouse) | to_underlying(EventCategory::Input);
-
             // `true` -> mouse scrolled up else mouse scrolled down.
             const bool mDirection;
             const i32 mXOffset, mYOffset;
+            const static i32 msCategoryFlags = to_underlying(EventCategory::Mouse) | to_underlying(EventCategory::Input);
+
     };
 } // namespace Engine

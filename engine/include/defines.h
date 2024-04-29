@@ -57,6 +57,7 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 #include <sys/time.h>
 #include <wayland-client.h>
 #include <wayland-client-protocol.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 #else
 #error "Unknown platform!"
@@ -64,6 +65,7 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 
 #include <cstring>
 #include <cstdarg>
+#include <cstdint>
 
 #include <iostream>
 #include <memory>

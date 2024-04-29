@@ -2,6 +2,7 @@
 
 #include "platform/platform.h"
 #include "application/application.h"
+#include "logger/logger.h"
 
 namespace Engine {
     class ApplicationManager {
@@ -18,7 +19,11 @@ namespace Engine {
             StatusCode RunApplication();
 
             ~ApplicationManager() {
+                LTRACE("Destroying application: %s", mpApplication->name)
+
                 delete mpApplication;
+
+                LTRACE("Destroyed application manager")
             }
     };
 }; // namespace Engine
