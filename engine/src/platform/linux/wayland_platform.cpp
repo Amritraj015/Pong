@@ -28,7 +28,7 @@ namespace Engine {
     void on_key_press(void *data, wl_keyboard *kb, uint32_t ser, uint32_t t, uint32_t key, uint32_t state);
     void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface);
     void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface, wl_array *keys);
-    void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz);
+    void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t format, int32_t fd, uint32_t sz);
 
     void configure_top_level_object(void *data, xdg_toplevel *top, int32_t newWidth, int32_t newHeight, wl_array *stat);
     void close_top_level_object(void *data, xdg_toplevel *top);
@@ -175,7 +175,7 @@ namespace Engine {
 
         // Dispose keyboard structure.
         wl_keyboard_release(mpKeyboard);
-        LTRACE("Released keyboard resoueces")
+        LTRACE("Released keyboard resources")
 
         // Dispose seat.
         wl_seat_release(mpSeat);
@@ -216,7 +216,7 @@ namespace Engine {
     void WaylandPlatform::SleepForDuration(u64 duration) {
     }
 
-    void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t frmt, int32_t fd, uint32_t sz) {
+    void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t format, int32_t fd, uint32_t sz) {
     }
 
     void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface, wl_array *keys) {
