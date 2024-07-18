@@ -269,7 +269,7 @@ namespace Engine {
     }
 
     void draw(WaylandPlatform *platform) {
-        memset(platform->GetPixels(), 255, platform->GetWindowWidth() * platform->GetWindowHeight() * 4);
+        memset(platform->GetPixels(), 0xCCAABBCC, platform->GetWindowWidth() * platform->GetWindowHeight() * 4);
 
         wl_surface_attach(platform->GetSurface(), platform->GetBuffer(), 0, 0);
         wl_surface_damage_buffer(platform->GetSurface(), 0, 0, platform->GetWindowWidth(), platform->GetWindowHeight());
