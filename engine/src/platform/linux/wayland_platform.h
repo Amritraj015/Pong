@@ -221,6 +221,39 @@ namespace Engine {
             /** Wayland pointer listener. */
             wl_pointer_listener mPointerListener{};
     };
+
+    // void on_mouse_enter(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    // void on_mouse_leave(void *data, wl_pointer *pointer, uint32_t serial, wl_surface *surface);
+    // void on_mouse_motion(void *data, wl_pointer *pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y);
+    // void on_mouse_input(void *data, wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
+    // void on_mouse_axis(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
+    // void on_mouse_frame(void *data, wl_pointer *pointer);
+    // void on_mouse_axis_source(void *data, wl_pointer *pointer, uint32_t axis_source);
+    // void on_mouse_axis_stop(void *data, wl_pointer *pointer, uint32_t time, uint32_t axis);
+    // void on_mouse_axis_discrete(void *data, wl_pointer *pointer, uint32_t axis, int32_t discrete);
+    // void on_mouse_axis_value120(void *data, wl_pointer *pointer, uint32_t axis, int32_t value120);
+    // void on_mouse_axis_relative_direction(void *data, wl_pointer *pointer, uint32_t axis, uint32_t direction);
+    //
+    // void keyboard_repeat_info(void *data, wl_keyboard *kb, int32_t rate, int32_t del);
+    // void keyboard_modifiers(void *data, wl_keyboard *kb, uint32_t ser, uint32_t dep, uint32_t lat, uint32_t lock, uint32_t grp);
+    // void on_key_press(void *data, wl_keyboard *kb, uint32_t ser, uint32_t t, uint32_t key, uint32_t state);
+    // void on_keyboard_leave(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface);
+    // void on_keyboard_enter(void *data, wl_keyboard *kb, uint32_t ser, wl_surface *surface, wl_array *keys);
+    // void keyboard_mapping(void *data, wl_keyboard *kb, uint32_t format, int32_t fd, uint32_t sz);
+    //
+    // void configure_top_level_object(void *data, xdg_toplevel *top, int32_t newWidth, int32_t newHeight, wl_array *stat);
+    // void close_top_level_object(void *data, xdg_toplevel *top);
+    // void configure_surface(void *data, xdg_surface *xdg_surface, uint32_t serial);
+    // void on_global_object_removal(void *data, wl_registry *registry, uint32_t name);
+    // void on_global_object_available(void *data, wl_registry *registry, uint32_t name, const char *interface, uint32_t v);
+    // void seat_name(void *data, wl_seat *seat, const char *name);
+    // void shell_ping(void *data, xdg_wm_base *wmBase, uint32_t serial);
+    // void draw_new_frame(void *data, wl_callback *cb, uint32_t a);
+    // void resize_window(WaylandPlatform *platform);
+    // void draw(WaylandPlatform *platform);
+    // i32 allocate_shared_memory(WaylandPlatform *platform, uint64_t sz);
+    // void seat_capabilities(void *data, wl_seat *seat, uint32_t capabilities);
+    // void translate_keycode();
 } // namespace Engine
 
 #endif

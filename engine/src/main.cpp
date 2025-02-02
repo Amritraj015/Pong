@@ -12,7 +12,7 @@ void *operator new(size_t size) {
 }
 #endif
 
-int main() {
+i32 main() {
     // Get the current platform.
     Engine::Platform *platform = Engine::get_platform();
 
